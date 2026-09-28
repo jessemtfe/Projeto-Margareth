@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model CadastroGeradores {
+  idGerador    Int      @id @default(autoincrement()) @map("id_gerador")
+  gerador      String   @db.VarChar(100)
+  tipo         String   @db.VarChar(50)
+  rejeito      Decimal  @db.Decimal(5, 2)
+  ultimaColeta DateTime @db.Date @map("ultima_coleta")
+  statu        String   @db.VarChar(30)
+
+  @@map("cadastro_geradores")
+}
+
+model CadastroCooperados {
+  idCooperado Int     @id @default(autoincrement()) @map("id_cooperado")
+  nome        String  @db.VarChar(100)
+  horas       Decimal @db.Decimal(6, 2)
+  domingo     Decimal @db.Decimal(6, 2)
+  kgTriados   Decimal @db.Decimal(10, 2) @map("kg_triados")
+  situacao    String  @db.VarChar(30)
+
+  @@map("cadastro_cooperados")
+}
+
+model TabelaPrecos {
+  idPreco    Int     @id @default(autoincrement()) @map("id_preco")
+  material   String  @db.VarChar(50)
+  precoPorKg Decimal @db.Decimal(10, 2) @map("preco_por_kg")
+  mes        String  @db.VarChar(20)
+  status     String  @db.VarChar(30)
+
+  @@map("tabela_precos")
+}
+
+model TabelaCargas {
+  idCarga Int     @id @default(autoincrement()) @map("id_carga")
+  gerador String  @db.VarChar(50)
+  material String  @db.VarChar(50) @map("meterial")
+  peso    Decimal @db.Decimal(10, 2)
+  rejeito Decimal @db.Decimal(5, 2)
+  status  String  @db.VarChar(50)
+  data    String  @db.VarChar(50)
+
+  @@map("tabela_cargas")
+}
