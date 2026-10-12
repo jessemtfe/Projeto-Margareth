@@ -67,10 +67,6 @@ export default function LoginPage() {
             Acesso ao sistema
           </p>
           <h1 className="mt-2 text-3xl font-bold tracking-tight">Bem-vindo de volta</h1>
-          <p className="mt-2 text-sm leading-6 text-white/70">
-            Entre para acompanhar e apoiar a operação da EcoCat.
-          </p>
-
           <form className="mt-7 space-y-4" onSubmit={handleSubmit}>
             <label className="block text-sm font-medium" htmlFor="email">
               E-mail
