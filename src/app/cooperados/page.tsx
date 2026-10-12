@@ -28,7 +28,14 @@ export default function CooperadosPage() {
   useEffect(() => {
     const carregarCooperados = async () => {
       try {
-        const response = await fetch("/api/cooperados");
+        const response = await fetch(`/api/cooperados?t=${Date.now()}`, {
+          cache: "no-store",
+          headers: {
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            Pragma: "no-cache",
+            Expires: "0",
+          },
+        });
 
         if (!response.ok) {
           throw new Error("Erro ao buscar cooperados");

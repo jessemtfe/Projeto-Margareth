@@ -38,7 +38,14 @@ export default function PrecosPage() {
   useEffect(() => {
     const carregarPrecos = async () => {
       try {
-        const response = await fetch("/api/precos");
+        const response = await fetch(`/api/precos?t=${Date.now()}`, {
+          cache: "no-store",
+          headers: {
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            Pragma: "no-cache",
+            Expires: "0",
+          },
+        });
 
         if (!response.ok) {
           throw new Error("Erro ao buscar preços");

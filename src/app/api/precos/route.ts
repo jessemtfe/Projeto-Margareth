@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { getCurrentUser, hasRole } from "../../../../lib/auth";
 import prisma from "../../../../lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +21,10 @@ const formatPreco = (item: any) => ({
 });
 
 export async function GET() {
+  if (!(await getCurrentUser())) {
+    return NextResponse.json({ error: "Autenticação necessária." }, { status: 401 });
+  }
+
   const precos = await prisma.tabelaPrecos.findMany({
     orderBy: { idPreco: "desc" },
   });
@@ -28,6 +33,14 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json({ error: "Autenticação necessária." }, { status: 401 });
+  }
+  if (!hasRole(user, "EDITOR")) {
+    return NextResponse.json({ error: "Permissão de edição necessária." }, { status: 403 });
+  }
+
   const body = await request.json();
   const material = String(body.material ?? "").trim();
   const preco = Number(body.preco ?? 0);

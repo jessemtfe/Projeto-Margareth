@@ -7,13 +7,46 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserRole {
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+model UserAccount {
+  id         String        @id @default(cuid()) @db.VarChar(30)
+  cognitoSub String        @unique @map("cognito_sub") @db.VarChar(64)
+  email      String        @unique @db.VarChar(255)
+  name       String        @db.VarChar(100)
+  role       UserRole      @default(VIEWER)
+  active     Boolean       @default(true)
+  createdAt  DateTime      @default(now()) @map("created_at")
+  sessions   AuthSession[]
+
+  @@map("user_accounts")
+}
+
+model AuthSession {
+  id        String      @id @db.VarChar(36)
+  tokenHash String      @unique @map("token_hash") @db.Char(64)
+  userId    String      @map("user_id") @db.VarChar(30)
+  expiresAt DateTime    @map("expires_at")
+  createdAt DateTime    @default(now()) @map("created_at")
+  user      UserAccount @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("auth_sessions")
+}
+
 model CadastroGeradores {
-  idGerador    Int      @id @default(autoincrement()) @map("id_gerador")
-  gerador      String   @db.VarChar(100)
-  tipo         String   @db.VarChar(50)
-  rejeito      Decimal  @db.Decimal(5, 2)
-  ultimaColeta DateTime @db.Date @map("ultima_coleta")
-  statu        String   @db.VarChar(30)
+  idGerador    Int            @id @default(autoincrement()) @map("id_gerador")
+  gerador      String         @db.VarChar(100)
+  tipo         String         @db.VarChar(50)
+  rejeito      Decimal        @db.Decimal(5, 2)
+  ultimaColeta DateTime       @map("ultima_coleta") @db.Date
+  statu        String         @db.VarChar(30)
+  cargas       TabelaCargas[]
 
   @@map("cadastro_geradores")
 }
@@ -23,7 +56,7 @@ model CadastroCooperados {
   nome        String  @db.VarChar(100)
   horas       Decimal @db.Decimal(6, 2)
   domingo     Decimal @db.Decimal(6, 2)
-  kgTriados   Decimal @db.Decimal(10, 2) @map("kg_triados")
+  kgTriados   Decimal @map("kg_triados") @db.Decimal(10, 2)
   situacao    String  @db.VarChar(30)
 
   @@map("cadastro_cooperados")
@@ -32,7 +65,7 @@ model CadastroCooperados {
 model TabelaPrecos {
   idPreco    Int     @id @default(autoincrement()) @map("id_preco")
   material   String  @db.VarChar(50)
-  precoPorKg Decimal @db.Decimal(10, 2) @map("preco_por_kg")
+  precoPorKg Decimal @map("preco_por_kg") @db.Decimal(10, 2)
   mes        String  @db.VarChar(20)
   status     String  @db.VarChar(30)
 
@@ -40,13 +73,15 @@ model TabelaPrecos {
 }
 
 model TabelaCargas {
-  idCarga Int     @id @default(autoincrement()) @map("id_carga")
-  gerador String  @db.VarChar(50)
-  material String  @db.VarChar(50) @map("meterial")
-  peso    Decimal @db.Decimal(10, 2)
-  rejeito Decimal @db.Decimal(5, 2)
-  status  String  @db.VarChar(50)
-  data    String  @db.VarChar(50)
+  idCarga         Int                @id @default(autoincrement()) @map("id_carga")
+  geradorId       Int?               @map("gerador_id")
+  gerador         String             @db.VarChar(50)
+  material        String             @map("meterial") @db.VarChar(50)
+  peso            Decimal            @db.Decimal(10, 2)
+  rejeito         Decimal            @db.Decimal(5, 2)
+  status          String             @db.VarChar(50)
+  data            String             @db.VarChar(50)
+  cadastroGerador CadastroGeradores? @relation(fields: [geradorId], references: [idGerador], onDelete: Restrict)
 
   @@map("tabela_cargas")
 }

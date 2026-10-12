@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import AppShell from "./components/app-shell";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Margareth",
-  description: "Sistema de rateio para cooperativa de reciclagem da Margareth.",
+  title: "EcoCat",
+  description: "Sistema de rateio para a cooperativa de reciclagem EcoCat.",
   icons: {
     icon: "/icon.svg",
     shortcut: "/icon.svg",
@@ -28,7 +29,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="pt-BR"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full bg-[#f4f7f2] text-slate-900">{children}</body>
+      <body className="min-h-full bg-[#f3f5f1] text-slate-900">
+        <AppShell>{children}</AppShell>
+      </body>
     </html>
   );
 }
