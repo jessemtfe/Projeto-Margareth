@@ -75,11 +75,11 @@ export default function CadastroPage() {
   return (
     <main className="relative isolate flex min-h-screen items-center overflow-hidden bg-[#123d2e] px-4 py-8 sm:px-8">
       <Image
-        src="/login-recycling.jpeg"
+        src="/login-recycling.webp"
         alt=""
         fill
         priority
-        unoptimized
+        quality={90}
         sizes="100vw"
         className="object-cover object-center"
       />
