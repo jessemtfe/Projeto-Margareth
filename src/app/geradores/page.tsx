@@ -41,7 +41,14 @@ export default function GeradoresPage() {
   useEffect(() => {
     const carregarGeradores = async () => {
       try {
-        const response = await fetch("/api/geradores");
+        const response = await fetch(`/api/geradores?t=${Date.now()}`, {
+          cache: "no-store",
+          headers: {
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            Pragma: "no-cache",
+            Expires: "0",
+          },
+        });
 
         if (!response.ok) {
           throw new Error("Erro ao buscar geradores");
@@ -132,7 +139,7 @@ export default function GeradoresPage() {
             </div>
           </div>
 
-          <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
             <div className="rounded-2xl bg-[#f3fbf5] p-4">
               <p className="text-sm text-slate-500">Total</p>
               <p className="mt-2 text-3xl font-bold text-slate-900">{geradores.length}</p>
@@ -144,6 +151,10 @@ export default function GeradoresPage() {
             <div className="rounded-2xl bg-[#fff7ea] p-4">
               <p className="text-sm text-slate-500">Comerciais</p>
               <p className="mt-2 text-3xl font-bold text-slate-900">{geradores.filter((item) => item.tipo === "Comercial").length}</p>
+            </div>
+            <div className="rounded-2xl bg-violet-50 p-4">
+              <p className="text-sm text-slate-500">Institucionais</p>
+              <p className="mt-2 text-3xl font-bold text-slate-900">{geradores.filter((item) => item.tipo === "Institucional").length}</p>
             </div>
             <div className="rounded-2xl bg-[#fff1f2] p-4">
               <p className="text-sm text-slate-500">Alertas</p>

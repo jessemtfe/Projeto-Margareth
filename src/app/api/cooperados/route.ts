@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { getCurrentUser, hasRole } from "../../../../lib/auth";
 import prisma from "../../../../lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -14,6 +15,10 @@ const formatCooperado = (item: any) => ({
 });
 
 export async function GET() {
+  if (!(await getCurrentUser())) {
+    return NextResponse.json({ error: "Autenticação necessária." }, { status: 401 });
+  }
+
   const cooperados = await prisma.cadastroCooperados.findMany({
     orderBy: { idCooperado: "desc" },
   });
@@ -22,6 +27,14 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json({ error: "Autenticação necessária." }, { status: 401 });
+  }
+  if (!hasRole(user, "EDITOR")) {
+    return NextResponse.json({ error: "Permissão de edição necessária." }, { status: 403 });
+  }
+
   const body = await request.json();
   const nome = String(body.nome ?? "").trim();
   const horas = Number(body.horas ?? 0);
