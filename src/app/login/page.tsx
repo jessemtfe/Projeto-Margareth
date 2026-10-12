@@ -51,15 +51,15 @@ export default function LoginPage() {
   return (
     <main className="relative isolate flex min-h-screen items-center overflow-hidden bg-[#123d2e] px-4 py-8 sm:px-8">
       <Image
-        src="/login-recycling.svg"
+        src="/login-recycling.png"
         alt=""
         fill
         priority
         sizes="100vw"
-        unoptimized
+        quality={90}
         className="object-cover object-center"
       />
-      <div className="absolute inset-0 -z-0 bg-gradient-to-r from-[#0b3025]/55 via-[#0b3025]/10 to-transparent" />
+      <div className="absolute inset-0 -z-0 bg-gradient-to-r from-[#0b3025]/75 via-[#0b3025]/40 to-[#0b3025]/5" />
 
       <section className="relative z-10 mx-auto w-full max-w-[1320px]">
         <div className="max-w-md rounded-3xl border border-white/15 bg-[#123d2e]/90 p-6 text-white shadow-2xl shadow-black/20 backdrop-blur-md sm:p-9">
