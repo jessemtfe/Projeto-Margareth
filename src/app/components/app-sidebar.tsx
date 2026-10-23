@@ -68,7 +68,7 @@ export default function AppSidebar() {
     const links = account?.profile === "COOPERADO"
       ? [
           { href: "/", label: "Início", icon: House },
-          { href: "/cooperados", label: "Meus registros", icon: UsersRound },
+      { href: "/meus-registros", label: "Meus registros", icon: UsersRound },
         ]
       : account?.profile === "BALANCEIRO"
         ? [

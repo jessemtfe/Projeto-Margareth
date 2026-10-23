@@ -41,6 +41,9 @@ export async function proxy(request: NextRequest) {
   if (pathname === "/usuarios" && !hasProfile(user, "PRESIDENTE")) {
     return NextResponse.redirect(new URL("/", request.url));
   }
+  if (pathname === "/cooperados" && !hasProfile(user, "PRESIDENTE")) {
+    return NextResponse.redirect(new URL("/meus-registros", request.url));
+  }
 
   if (pathname.startsWith("/api/") && !user.active) {
     return NextResponse.json(
