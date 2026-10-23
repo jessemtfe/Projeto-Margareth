@@ -35,6 +35,7 @@ function formatCollectionDate(value: number | string) {
 
 export default function GeradoresPage() {
   const [geradores, setGeradores] = useState<Gerador[]>([]);
+  const [termoBusca, setTermoBusca] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -53,6 +54,14 @@ export default function GeradoresPage() {
     setFormData({ nome: gerador.nome, tipo: gerador.tipo });
     setIsOpen(true);
   }
+
+  const geradoresFiltrados = geradores.filter((gerador) => {
+    const termo = termoBusca.trim().toLocaleLowerCase("pt-BR");
+    if (!termo) return true;
+
+    return [gerador.nome, gerador.tipo, gerador.status]
+      .some((valor) => valor.toLocaleLowerCase("pt-BR").includes(termo));
+  });
 
   useEffect(() => {
     void fetch("/api/auth/me", { cache: "no-store" })
@@ -145,7 +154,11 @@ export default function GeradoresPage() {
             <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 md:w-[320px]">
               <Search className="h-4 w-4 text-slate-400" />
               <input
+                type="search"
+                value={termoBusca}
+                onChange={(event) => setTermoBusca(event.target.value)}
                 placeholder="Buscar gerador"
+                aria-label="Buscar gerador por nome, tipo ou status"
                 className="w-full border-none bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
               />
             </div>
@@ -190,12 +203,14 @@ export default function GeradoresPage() {
                   <tr>
                     <td colSpan={isPresident ? 5 : 4} className="px-4 py-8 text-center text-sm text-slate-500">Carregando geradores...</td>
                   </tr>
-                ) : geradores.length === 0 ? (
+                ) : geradoresFiltrados.length === 0 ? (
                   <tr>
-                    <td colSpan={isPresident ? 5 : 4} className="px-4 py-8 text-center text-sm text-slate-500">Nenhum gerador cadastrado.</td>
+                    <td colSpan={isPresident ? 5 : 4} className="px-4 py-8 text-center text-sm text-slate-500">
+                      {termoBusca.trim() ? "Nenhum gerador encontrado para a busca." : "Nenhum gerador cadastrado."}
+                    </td>
                   </tr>
                 ) : (
-                  geradores.map((gerador) => (
+                  geradoresFiltrados.map((gerador) => (
                     <tr key={gerador.id ?? gerador.nome} className="hover:bg-slate-50">
                       <td className="px-4 py-4">
                         <div className="flex items-center gap-3">
