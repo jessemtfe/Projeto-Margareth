@@ -43,11 +43,17 @@ export async function GET() {
   });
 
   if (user.profile === "COOPERADO") {
+    const cargas = await prisma.tabelaCargas.findMany({
+      select: { material: true },
+      orderBy: { idCarga: "desc" },
+    });
     const materiais = Array.from(
       new Map(
-        precos
-          .filter((item) => item.status.toLowerCase() === "ativo")
-          .map((item) => [item.material.trim().toLowerCase(), item.material.trim()]),
+        [...precos, ...cargas]
+          .map((item) => ("material" in item ? item.material : ""))
+          .map((item) => item.trim())
+          .filter(Boolean)
+          .map((item) => [item.toLowerCase(), item]),
       ).values(),
     );
     return NextResponse.json(materiais);
