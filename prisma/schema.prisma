@@ -79,6 +79,7 @@ model CadastroCooperados {
   domingo     Decimal @db.Decimal(6, 2)
   kgTriados   Decimal @map("kg_triados") @db.Decimal(10, 2)
   situacao    String  @db.VarChar(30)
+  origem      String  @default("MANUAL") @db.VarChar(20)
 
   @@map("cadastro_cooperados")
   conta       UserAccount?
