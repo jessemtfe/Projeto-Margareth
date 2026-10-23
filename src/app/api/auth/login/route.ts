@@ -34,6 +34,7 @@ export async function POST(request: Request) {
         name: identity.name,
         role: identity.email === adminEmail ? "ADMIN" : "VIEWER",
         profile: identity.email === adminEmail ? "PRESIDENTE" : "COOPERADO",
+        active: identity.email === adminEmail,
       },
       update: {
         email: identity.email,
@@ -49,6 +50,13 @@ export async function POST(request: Request) {
         where: { id: account.id },
         data: { role: "ADMIN", profile: "PRESIDENTE" },
       });
+    }
+
+    if (!account.active) {
+      return NextResponse.json(
+        { error: "Sua conta foi criada e aguarda liberação da pessoa administradora." },
+        { status: 403 },
+      );
     }
 
     if (account.role !== "ADMIN" && account.profile === "COOPERADO" && !account.cooperadoId) {
@@ -78,13 +86,6 @@ export async function POST(request: Request) {
           data: { cooperadoId },
         });
       }
-    }
-
-    if (!account.active) {
-      return NextResponse.json(
-        { error: "Esta conta está desativada. Procure a pessoa administradora." },
-        { status: 403 },
-      );
     }
 
     const session = await createAuthSession(account.id);
