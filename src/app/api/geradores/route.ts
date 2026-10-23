@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 
 import { getCurrentUser, hasProfile } from "../../../../lib/auth";
-import { getRejectionAlerts } from "../../../../lib/carga-rules";
 import prisma from "../../../../lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -13,16 +12,46 @@ type GeradorRecord = {
   rejeito: unknown;
   statu: string | null;
   ultimaColeta: Date | null;
+  cargas?: Array<{
+    idCarga: number;
+    gerador: string;
+    geradorId: number | null;
+    rejeito: unknown;
+    status: string;
+    data: string;
+  }>;
 };
 
-const formatGerador = (item: GeradorRecord) => ({
-  id: item.idGerador,
-  nome: item.gerador,
-  tipo: item.tipo,
-  rejeito: `${Number(String(item.rejeito)).toFixed(2)}%`,
-  status: item.statu ?? "Normal",
-  ultimaColeta: item.ultimaColeta ? new Date(item.ultimaColeta).toISOString() : new Date().toISOString(),
-});
+function formatGerador(item: GeradorRecord) {
+  const historico = (item.cargas ?? [])
+    .sort((a, b) => b.idCarga - a.idCarga)
+    .map((carga) => ({
+      id: carga.idCarga,
+      rejeito: Number(String(carga.rejeito)),
+      status: carga.status,
+      data: carga.data,
+    }));
+  const ultimas = historico.slice(0, 3);
+  const alertaAtual =
+    ultimas.length === 3 &&
+    ultimas.every((carga) => carga.rejeito > 25);
+
+  return {
+    id: item.idGerador,
+    nome: item.gerador,
+    tipo: item.tipo,
+    rejeito: null,
+    status: alertaAtual ? "Alertado" : "Normal",
+    ultimaColeta: item.ultimaColeta ? new Date(item.ultimaColeta).toISOString() : new Date().toISOString(),
+    resumo: {
+      totalCargas: historico.length,
+      ultimaRejeito: historico[0]?.rejeito ?? null,
+      sequenciaAtual: alertaAtual ? 3 : ultimas.filter((carga) => carga.rejeito > 25).length,
+      alertaAtual,
+      historico,
+    },
+  };
+}
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -37,27 +66,14 @@ export async function GET() {
     orderBy: { idGerador: "desc" },
     include: {
       cargas: {
-        select: { idCarga: true, gerador: true, geradorId: true, rejeito: true, status: true },
+        select: { idCarga: true, gerador: true, geradorId: true, rejeito: true, status: true, data: true },
         orderBy: { idCarga: "desc" },
       },
     },
   });
 
   return NextResponse.json(
-    geradores.map((gerador) => {
-      const alertado = getRejectionAlerts(
-        gerador.cargas.map((carga) => ({
-          ...carga,
-          id: carga.idCarga,
-          rejeito: Number(carga.rejeito),
-        })),
-      ).length > 0;
-
-      return formatGerador({
-        ...gerador,
-        statu: alertado ? "Alertado" : gerador.statu,
-      });
-    }),
+    geradores.map(formatGerador),
   );
 }
 
@@ -73,10 +89,7 @@ export async function POST(request: Request) {
   const body = await request.json();
   const nome = String(body.nome ?? "").trim();
   const tipo = String(body.tipo ?? "Residencial").trim();
-  const rejeito = Number(body.rejeito ?? 0);
-  const status = String(body.status ?? "Normal").trim();
-
-  if (!nome || Number.isNaN(rejeito)) {
+  if (!nome) {
     return NextResponse.json({ error: "Dados inválidos" }, { status: 400 });
   }
 
@@ -84,7 +97,7 @@ export async function POST(request: Request) {
     data: {
       gerador: nome,
       tipo,
-      rejeito,
+      rejeito: 0,
       ultimaColeta: new Date(),
       statu: status || "Normal",
     },
@@ -102,14 +115,12 @@ export async function PATCH(request: Request) {
   const id = Number(body.id);
   const nome = String(body.nome ?? "").trim();
   const tipo = String(body.tipo ?? "").trim();
-  const rejeito = Number(body.rejeito);
-  const status = String(body.status ?? "").trim();
-  if (!Number.isSafeInteger(id) || id <= 0 || !nome || !tipo || !Number.isFinite(rejeito) || rejeito < 0 || rejeito > 100 || !status) {
+  if (!Number.isSafeInteger(id) || id <= 0 || !nome || !tipo) {
     return NextResponse.json({ error: "Dados inválidos." }, { status: 400 });
   }
   const gerador = await prisma.cadastroGeradores.update({
     where: { idGerador: id },
-    data: { gerador: nome, tipo, rejeito, statu: status, ultimaColeta: new Date() },
+    data: { gerador: nome, tipo, ultimaColeta: new Date() },
   });
   return NextResponse.json(formatGerador(gerador));
 }

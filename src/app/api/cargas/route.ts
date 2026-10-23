@@ -168,16 +168,25 @@ export async function POST(request: Request) {
       take: 3,
       select: { idCarga: true, rejeito: true },
     });
+    const idsRecentes = recentes.map((item) => item.idCarga);
+    const alertaAtivo = await prisma.alertaRejeito.findFirst({
+      where: { geradorId, ativo: true },
+      orderBy: { criadoEm: "desc" },
+    });
+    await prisma.alertaRejeito.updateMany({
+      where: { geradorId, ativo: true },
+      data: { ativo: false },
+    });
     if (
       recentes.length === 3 &&
       recentes.every((item) => Number(item.rejeito) > 25)
     ) {
-      const existente = await prisma.alertaRejeito.findFirst({
-        where: { geradorId, cargas: { equals: recentes.map((item) => item.idCarga) } },
-      });
-      if (!existente) {
+      const mesmaSequencia =
+        alertaAtivo &&
+        JSON.stringify(alertaAtivo.cargas) === JSON.stringify(idsRecentes);
+      if (!mesmaSequencia) {
         await prisma.alertaRejeito.create({
-          data: { geradorId, cargas: recentes.map((item) => item.idCarga) },
+          data: { geradorId, cargas: idsRecentes, ativo: true },
         });
       }
     }
