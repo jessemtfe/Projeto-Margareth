@@ -17,6 +17,19 @@ export type AuthenticatedUser = {
   active: boolean;
 };
 
+function normalizeAdministrator(
+  user: AuthenticatedUser,
+): AuthenticatedUser {
+  if (user.role !== "ADMIN") {
+    return user;
+  }
+
+  return {
+    ...user,
+    profile: "PRESIDENTE",
+  };
+}
+
 function hashToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
 }
@@ -51,7 +64,7 @@ export async function getAuthenticatedUser(
     return null;
   }
 
-  return session.user;
+  return normalizeAdministrator(session.user);
 }
 
 export async function getCurrentUser(): Promise<AuthenticatedUser | null> {
