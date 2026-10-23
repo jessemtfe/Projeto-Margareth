@@ -158,16 +158,17 @@ export default function CooperadosPage() {
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Domingo</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Kg triados</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Situação</th>
+                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 bg-white">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-sm text-slate-500">Carregando cooperados...</td>
+                    <td colSpan={6} className="px-4 py-8 text-center text-sm text-slate-500">Carregando cooperados...</td>
                   </tr>
                 ) : cooperados.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-sm text-slate-500">Nenhum cooperado cadastrado.</td>
+                    <td colSpan={6} className="px-4 py-8 text-center text-sm text-slate-500">Nenhum cooperado cadastrado.</td>
                   </tr>
                 ) : (
                   cooperados.map((cooperado) => (
@@ -183,11 +184,6 @@ export default function CooperadosPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-4">
-                        <button type="button" onClick={() => void removeCooperado(cooperado.id)} className="text-sm font-semibold text-rose-700 hover:underline">
-                          Excluir
-                        </button>
-                      </td>
                       <td className="px-4 py-4 text-sm text-slate-700">{cooperado.horas}</td>
                       <td className="px-4 py-4 text-sm text-slate-700">{cooperado.domingo}</td>
                       <td className="px-4 py-4 text-sm text-slate-700">{cooperado.kg}</td>
@@ -202,6 +198,11 @@ export default function CooperadosPage() {
                           {cooperado.situacao === "Parcial" ? <Clock3 className="h-3.5 w-3.5" /> : <WalletCards className="h-3.5 w-3.5" />}
                           {cooperado.situacao}
                         </span>
+                      </td>
+                      <td className="px-4 py-4">
+                        <button type="button" onClick={() => void removeCooperado(cooperado.id)} className="text-sm font-semibold text-rose-700 hover:underline">
+                          Excluir
+                        </button>
                       </td>
                     </tr>
                   ))
