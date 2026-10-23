@@ -37,8 +37,14 @@ export default function GeradoresPage() {
     rejeito: "",
     status: "Normal",
   });
+  const [isPresident, setIsPresident] = useState(false);
 
   useEffect(() => {
+    void fetch("/api/auth/me", { cache: "no-store" })
+      .then((response) => response.json())
+      .then((account: { profile?: string }) => setIsPresident(account.profile === "PRESIDENTE"))
+      .catch(() => setIsPresident(false));
+
     const carregarGeradores = async () => {
       try {
         const response = await fetch(`/api/geradores?t=${Date.now()}`, {
@@ -113,14 +119,14 @@ export default function GeradoresPage() {
             </Link>
           </div>
 
-          <button
+          {isPresident && <button
             type="button"
             onClick={() => setIsOpen(true)}
             className="inline-flex items-center gap-2 rounded-full bg-[#465a3e] px-4 py-2 text-sm font-semibold text-white"
           >
             <Plus className="h-4 w-4" />
             Novo gerador
-          </button>
+          </button>}
         </header>
 
         <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm md:p-8">

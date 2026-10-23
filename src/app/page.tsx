@@ -57,6 +57,9 @@ export default async function HomePage() {
   let ultimoPreco: { idPreco: number; material: string; mes: string } | null = null;
 
   try {
+    const cooperadoVisibility = {
+      OR: [{ origem: "MANUAL" }, { conta: { isNot: null } }],
+    };
     const [
       cooperadosCount,
       cooperadosAtivosCount,
@@ -69,11 +72,16 @@ export default async function HomePage() {
       geradorRecente,
       precoRecente,
     ] = await Promise.all([
-      prisma.cadastroCooperados.count(),
-      prisma.cadastroCooperados.count({ where: { situacao: "Ativo" } }),
+      prisma.cadastroCooperados.count({ where: cooperadoVisibility }),
+      prisma.cadastroCooperados.count({
+        where: { ...cooperadoVisibility, situacao: "Ativo" },
+      }),
       prisma.cadastroGeradores.count(),
       prisma.cadastroGeradores.count({ where: { statu: "Normal" } }),
-      prisma.cadastroCooperados.aggregate({ _sum: { kgTriados: true } }),
+      prisma.cadastroCooperados.aggregate({
+        where: cooperadoVisibility,
+        _sum: { kgTriados: true },
+      }),
       prisma.tabelaCargas.count(),
       prisma.tabelaCargas.count({
         where: { status: { notIn: ["Vendida", "Rejeitada na entrada"] } },
