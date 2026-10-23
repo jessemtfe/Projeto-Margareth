@@ -24,6 +24,11 @@ export default function CooperadosPage() {
     kg: "",
     situacao: "Ativo",
   });
+  async function removeCooperado(id?: number) {
+    if (!id || !window.confirm("Excluir este cadastro?")) return;
+    const response = await fetch(`/api/cooperados?id=${id}`, { method: "DELETE" });
+    if (response.ok) setCooperados((items) => items.filter((item) => item.id !== id));
+  }
   useEffect(() => {
     const carregarCooperados = async () => {
       try {
@@ -177,6 +182,11 @@ export default function CooperadosPage() {
                             <p className="text-sm text-slate-500">Mês atual</p>
                           </div>
                         </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <button type="button" onClick={() => void removeCooperado(cooperado.id)} className="text-sm font-semibold text-rose-700 hover:underline">
+                          Excluir
+                        </button>
                       </td>
                       <td className="px-4 py-4 text-sm text-slate-700">{cooperado.horas}</td>
                       <td className="px-4 py-4 text-sm text-slate-700">{cooperado.domingo}</td>

@@ -31,9 +31,14 @@ export default function PrecosPage() {
   const [formData, setFormData] = useState({
     material: "",
     preco: "",
-    mes: "Outubro",
+    mes: "2026-10",
     status: "Ativo",
   });
+  async function removePreco(id?: number) {
+    if (!id || !window.confirm("Excluir este preço?")) return;
+    const response = await fetch(`/api/precos?id=${id}`, { method: "DELETE" });
+    if (response.ok) setPrecos((items) => items.filter((item) => item.id !== id));
+  }
   const [isPresident, setIsPresident] = useState(false);
 
   useEffect(() => {
@@ -98,7 +103,7 @@ export default function PrecosPage() {
 
       const novoPreco = (await response.json()) as Preco;
       setPrecos((atual) => [novoPreco, ...atual]);
-      setFormData({ material: "", preco: "", mes: "Outubro", status: "Ativo" });
+      setFormData({ material: "", preco: "", mes: "2026-10", status: "Ativo" });
       setIsOpen(false);
     } catch (error) {
       console.error(error);
@@ -192,6 +197,11 @@ export default function PrecosPage() {
                           </div>
                         </div>
                       </td>
+                      <td className="px-4 py-4">
+                        <button type="button" onClick={() => void removePreco(item.id)} className="text-sm font-semibold text-rose-700 hover:underline">
+                          Excluir
+                        </button>
+                      </td>
                       <td className="px-4 py-4 text-lg font-bold text-slate-900">{item.preco}</td>
                       <td className="px-4 py-4 text-sm text-slate-700">{item.mes}</td>
                       <td className="px-4 py-4">
@@ -254,9 +264,9 @@ export default function PrecosPage() {
                     onChange={(event) => setFormData((current) => ({ ...current, mes: event.target.value }))}
                     className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none"
                   >
-                    <option value="Outubro">Outubro</option>
-                    <option value="Novembro">Novembro</option>
-                    <option value="Dezembro">Dezembro</option>
+                    <option value="2026-10">2026-10</option>
+                    <option value="2026-11">2026-11</option>
+                    <option value="2026-12">2026-12</option>
                   </select>
                 </div>
               </div>

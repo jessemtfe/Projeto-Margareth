@@ -70,3 +70,37 @@ export async function POST(request: Request) {
 
   return NextResponse.json(formatGerador(gerador), { status: 201 });
 }
+
+export async function PATCH(request: Request) {
+  const user = await getCurrentUser();
+  if (!user || !hasProfile(user, "PRESIDENTE")) {
+    return NextResponse.json({ error: "Permissão de edição necessária." }, { status: 403 });
+  }
+  const body = await request.json();
+  const id = Number(body.id);
+  const nome = String(body.nome ?? "").trim();
+  const tipo = String(body.tipo ?? "").trim();
+  const rejeito = Number(body.rejeito);
+  const status = String(body.status ?? "").trim();
+  if (!Number.isSafeInteger(id) || id <= 0 || !nome || !tipo || !Number.isFinite(rejeito) || rejeito < 0 || rejeito > 100 || !status) {
+    return NextResponse.json({ error: "Dados inválidos." }, { status: 400 });
+  }
+  const gerador = await prisma.cadastroGeradores.update({
+    where: { idGerador: id },
+    data: { gerador: nome, tipo, rejeito, statu: status, ultimaColeta: new Date() },
+  });
+  return NextResponse.json(formatGerador(gerador));
+}
+
+export async function DELETE(request: Request) {
+  const user = await getCurrentUser();
+  if (!user || !hasProfile(user, "PRESIDENTE")) {
+    return NextResponse.json({ error: "Permissão de edição necessária." }, { status: 403 });
+  }
+  const id = Number(new URL(request.url).searchParams.get("id"));
+  if (!Number.isSafeInteger(id) || id <= 0) return NextResponse.json({ error: "Gerador inválido." }, { status: 400 });
+  const cargas = await prisma.tabelaCargas.count({ where: { geradorId: id } });
+  if (cargas) return NextResponse.json({ error: "Não é possível excluir um gerador com cargas registradas." }, { status: 409 });
+  await prisma.cadastroGeradores.delete({ where: { idGerador: id } });
+  return NextResponse.json({ ok: true });
+}

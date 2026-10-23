@@ -76,3 +76,38 @@ export async function POST(request: Request) {
 
   return NextResponse.json(formatCooperado(cooperado), { status: 201 });
 }
+
+export async function PATCH(request: Request) {
+  const user = await getCurrentUser();
+  if (!user || !hasProfile(user, "PRESIDENTE")) {
+    return NextResponse.json({ error: "Permissão de edição necessária." }, { status: 403 });
+  }
+  const body = await request.json();
+  const id = Number(body.id);
+  const nome = String(body.nome ?? "").trim();
+  const horas = Number(body.horas);
+  const domingo = Number(body.domingo);
+  const kgTriados = Number(body.kg);
+  const situacao = String(body.situacao ?? "").trim();
+  if (!Number.isSafeInteger(id) || id <= 0 || !nome || ![horas, domingo, kgTriados].every(Number.isFinite) || !situacao) {
+    return NextResponse.json({ error: "Dados inválidos." }, { status: 400 });
+  }
+  const cooperado = await prisma.cadastroCooperados.update({
+    where: { idCooperado: id },
+    data: { nome, horas, domingo, kgTriados, situacao },
+  });
+  return NextResponse.json(formatCooperado(cooperado));
+}
+
+export async function DELETE(request: Request) {
+  const user = await getCurrentUser();
+  if (!user || !hasProfile(user, "PRESIDENTE")) {
+    return NextResponse.json({ error: "Permissão de edição necessária." }, { status: 403 });
+  }
+  const id = Number(new URL(request.url).searchParams.get("id"));
+  if (!Number.isSafeInteger(id) || id <= 0) return NextResponse.json({ error: "Cooperado inválido." }, { status: 400 });
+  const conta = await prisma.userAccount.findFirst({ where: { cooperadoId: id }, select: { id: true } });
+  if (conta) return NextResponse.json({ error: "Desvincule a conta antes de excluir o cadastro." }, { status: 409 });
+  await prisma.cadastroCooperados.delete({ where: { idCooperado: id } });
+  return NextResponse.json({ ok: true });
+}
