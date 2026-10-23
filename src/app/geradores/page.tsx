@@ -38,6 +38,11 @@ export default function GeradoresPage() {
     status: "Normal",
   });
   const [isPresident, setIsPresident] = useState(false);
+  async function removeGerador(id?: number) {
+    if (!id || !window.confirm("Excluir este gerador?")) return;
+    const response = await fetch(`/api/geradores?id=${id}`, { method: "DELETE" });
+    if (response.ok) setGeradores((items) => items.filter((item) => item.id !== id));
+  }
 
   useEffect(() => {
     void fetch("/api/auth/me", { cache: "no-store" })
@@ -201,6 +206,11 @@ export default function GeradoresPage() {
                           </div>
                         </div>
                       </td>
+                      {isPresident && <td className="px-4 py-4">
+                        <button type="button" onClick={() => void removeGerador(gerador.id)} className="text-sm font-semibold text-rose-700 hover:underline">
+                          Excluir
+                        </button>
+                      </td>}
                       <td className="px-4 py-4 text-sm text-slate-700">{gerador.tipo}</td>
                       <td className="px-4 py-4 text-sm text-slate-700">{gerador.rejeito}</td>
                       <td className="px-4 py-4">

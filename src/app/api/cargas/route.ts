@@ -40,6 +40,7 @@ function formatCarga(carga: {
   material: string;
   peso: { toString(): string };
   rejeito: { toString(): string };
+  pesoSuspeito: boolean;
   status: string;
   data: string;
 }) {
@@ -50,6 +51,7 @@ function formatCarga(carga: {
     material: carga.material,
     peso: Number(carga.peso.toString()),
     rejeito: Number(carga.rejeito.toString()),
+    pesoSuspeito: carga.pesoSuspeito,
     status: carga.status,
     data: carga.data,
   };
@@ -155,8 +157,31 @@ export async function POST(request: Request) {
       rejeito,
       status,
       data,
+      pesoSuspeito: isWeightOutsideExpectedRange(peso),
     },
   });
+
+  if (geradorId) {
+    const recentes = await prisma.tabelaCargas.findMany({
+      where: { geradorId },
+      orderBy: { idCarga: "desc" },
+      take: 3,
+      select: { idCarga: true, rejeito: true },
+    });
+    if (
+      recentes.length === 3 &&
+      recentes.every((item) => Number(item.rejeito) > 25)
+    ) {
+      const existente = await prisma.alertaRejeito.findFirst({
+        where: { geradorId, cargas: { equals: recentes.map((item) => item.idCarga) } },
+      });
+      if (!existente) {
+        await prisma.alertaRejeito.create({
+          data: { geradorId, cargas: recentes.map((item) => item.idCarga) },
+        });
+      }
+    }
+  }
 
   return NextResponse.json(formatCarga(carga), { status: 201 });
 }

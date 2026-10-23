@@ -68,6 +68,7 @@ model CadastroGeradores {
   ultimaColeta DateTime       @map("ultima_coleta") @db.Date
   statu        String         @db.VarChar(30)
   cargas       TabelaCargas[]
+  alertas      AlertaRejeito[]
 
   @@map("cadastro_geradores")
 }
@@ -107,9 +108,22 @@ model TabelaCargas {
   rejeito         Decimal            @db.Decimal(5, 2)
   status          String             @db.VarChar(50)
   data            String             @db.VarChar(50)
+  pesoSuspeito    Boolean            @default(false) @map("peso_suspeito")
   cadastroGerador CadastroGeradores? @relation(fields: [geradorId], references: [idGerador], onDelete: Restrict)
 
   @@map("tabela_cargas")
+}
+
+model AlertaRejeito {
+  id          Int      @id @default(autoincrement())
+  geradorId   Int      @map("gerador_id")
+  criadoEm    DateTime @default(now()) @map("criado_em")
+  cargas      Json
+  lido        Boolean  @default(false)
+  gerador     CadastroGeradores @relation(fields: [geradorId], references: [idGerador], onDelete: Cascade)
+
+  @@index([geradorId, criadoEm])
+  @@map("alertas_rejeito")
 }
 
 model Turno {

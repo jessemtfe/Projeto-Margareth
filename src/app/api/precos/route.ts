@@ -12,6 +12,8 @@ const formatarPreco = (valor: number) =>
     minimumFractionDigits: 2,
   }).format(valor);
 
+const competence = (value: string) => /^\d{4}-(0[1-9]|1[0-2])$/.test(value);
+
 type PrecoRecord = {
   idPreco: number;
   material: string;
@@ -74,10 +76,10 @@ export async function POST(request: Request) {
   const body = await request.json();
   const material = String(body.material ?? "").trim();
   const preco = Number(body.preco ?? 0);
-  const mes = String(body.mes ?? "Outubro").trim();
+  const mes = String(body.mes ?? "2026-10").trim();
   const status = String(body.status ?? "Ativo").trim();
 
-  if (!material || Number.isNaN(preco)) {
+  if (!material || !Number.isFinite(preco) || preco < 0 || !competence(mes)) {
     return NextResponse.json({ error: "Dados inválidos" }, { status: 400 });
   }
 
@@ -98,10 +100,47 @@ export async function POST(request: Request) {
     data: {
       material,
       precoPorKg: preco,
-      mes: mes || "Outubro",
+      mes: mes || "2026-10",
       status: status || "Ativo",
     },
   });
 
   return NextResponse.json(formatPreco(registro), { status: 201 });
+}
+
+export async function PATCH(request: Request) {
+  const user = await getCurrentUser();
+  if (!user || !hasProfile(user, "PRESIDENTE")) {
+    return NextResponse.json({ error: "Permissão de edição necessária." }, { status: 403 });
+  }
+  const body = await request.json();
+  const id = Number(body.id);
+  const material = String(body.material ?? "").trim();
+  const preco = Number(body.preco);
+  const mes = String(body.mes ?? "");
+  const status = String(body.status ?? "").trim();
+  if (!Number.isSafeInteger(id) || id <= 0 || !material || !Number.isFinite(preco) || preco < 0 || !competence(mes) || !status) {
+    return NextResponse.json({ error: "Dados inválidos." }, { status: 400 });
+  }
+  const atual = await prisma.tabelaPrecos.findUnique({ where: { idPreco: id } });
+  if (!atual) return NextResponse.json({ error: "Preço não encontrado." }, { status: 404 });
+  const periodo = await prisma.rateioPeriodo.findUnique({ where: { competencia: mes }, select: { status: true } });
+  if (periodo?.status === "FECHADO") return NextResponse.json({ error: "O período está fechado." }, { status: 409 });
+  const registro = await prisma.tabelaPrecos.update({ where: { idPreco: id }, data: { material, precoPorKg: preco, mes, status } });
+  return NextResponse.json(formatPreco(registro));
+}
+
+export async function DELETE(request: Request) {
+  const user = await getCurrentUser();
+  if (!user || !hasProfile(user, "PRESIDENTE")) {
+    return NextResponse.json({ error: "Permissão de edição necessária." }, { status: 403 });
+  }
+  const id = Number(new URL(request.url).searchParams.get("id"));
+  if (!Number.isSafeInteger(id) || id <= 0) return NextResponse.json({ error: "Preço inválido." }, { status: 400 });
+  const atual = await prisma.tabelaPrecos.findUnique({ where: { idPreco: id } });
+  if (!atual) return NextResponse.json({ error: "Preço não encontrado." }, { status: 404 });
+  const periodo = await prisma.rateioPeriodo.findUnique({ where: { competencia: atual.mes }, select: { status: true } });
+  if (periodo?.status === "FECHADO") return NextResponse.json({ error: "O período está fechado." }, { status: 409 });
+  await prisma.tabelaPrecos.delete({ where: { idPreco: id } });
+  return NextResponse.json({ ok: true });
 }
