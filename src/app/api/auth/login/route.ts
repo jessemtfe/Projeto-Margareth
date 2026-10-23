@@ -59,12 +59,13 @@ export async function POST(request: Request) {
     }
 
     const session = await createAuthSession(account.id);
+    const effectiveProfile = account.role === "ADMIN" ? "PRESIDENTE" : account.profile;
     const response = NextResponse.json({
       user: {
         name: account.name,
         email: account.email,
         role: account.role,
-        profile: account.profile,
+        profile: effectiveProfile,
         cooperadoId: account.cooperadoId,
       },
     });
