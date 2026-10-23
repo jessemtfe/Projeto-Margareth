@@ -57,10 +57,25 @@ export async function POST(request: Request) {
         select: { idCooperado: true },
         take: 2,
       });
-      if (matchingCooperados.length === 1) {
+      const cooperadoId =
+        matchingCooperados.length === 1
+          ? matchingCooperados[0].idCooperado
+          : (
+              await prisma.cadastroCooperados.create({
+                data: {
+                  nome: account.name,
+                  horas: 0,
+                  domingo: 0,
+                  kgTriados: 0,
+                  situacao: "Ativo",
+                },
+                select: { idCooperado: true },
+              })
+            ).idCooperado;
+      if (cooperadoId) {
         account = await prisma.userAccount.update({
           where: { id: account.id },
-          data: { cooperadoId: matchingCooperados[0].idCooperado },
+          data: { cooperadoId },
         });
       }
     }
