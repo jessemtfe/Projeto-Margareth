@@ -41,7 +41,10 @@ export async function POST(request: Request) {
       },
     });
 
-    if (identity.email === adminEmail && account.role !== "ADMIN") {
+    if (
+      identity.email === adminEmail &&
+      (account.role !== "ADMIN" || account.profile !== "PRESIDENTE")
+    ) {
       account = await prisma.userAccount.update({
         where: { id: account.id },
         data: { role: "ADMIN", profile: "PRESIDENTE" },

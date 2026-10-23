@@ -97,7 +97,7 @@ export function hasProfile(
   user: AuthenticatedUser,
   ...profiles: UserProfile[]
 ) {
-  return profiles.includes(user.profile);
+  return user.role === "ADMIN" || profiles.includes(user.profile);
 }
 
 export async function readJsonObject(
