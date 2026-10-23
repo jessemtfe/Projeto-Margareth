@@ -1,11 +1,20 @@
 import { NextResponse } from "next/server";
 
-import { getCurrentUser, hasRole } from "../../../../lib/auth";
+import { getCurrentUser, hasProfile } from "../../../../lib/auth";
 import prisma from "../../../../lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-const formatCooperado = (item: any) => ({
+type CooperadoRecord = {
+  idCooperado: number;
+  nome: string;
+  horas: unknown;
+  domingo: unknown;
+  kgTriados: unknown;
+  situacao: string;
+};
+
+const formatCooperado = (item: CooperadoRecord) => ({
   id: item.idCooperado,
   nome: item.nome,
   horas: Number(String(item.horas)),
@@ -15,11 +24,16 @@ const formatCooperado = (item: any) => ({
 });
 
 export async function GET() {
-  if (!(await getCurrentUser())) {
+  const user = await getCurrentUser();
+  if (!user) {
     return NextResponse.json({ error: "Autenticação necessária." }, { status: 401 });
+  }
+  if (user.profile === "BALANCEIRO") {
+    return NextResponse.json({ error: "Acesso restrito aos dados dos cooperados." }, { status: 403 });
   }
 
   const cooperados = await prisma.cadastroCooperados.findMany({
+    where: user.profile === "COOPERADO" ? { idCooperado: user.cooperadoId ?? -1 } : undefined,
     orderBy: { idCooperado: "desc" },
   });
 
@@ -31,7 +45,7 @@ export async function POST(request: Request) {
   if (!user) {
     return NextResponse.json({ error: "Autenticação necessária." }, { status: 401 });
   }
-  if (!hasRole(user, "EDITOR")) {
+  if (!hasProfile(user, "PRESIDENTE")) {
     return NextResponse.json({ error: "Permissão de edição necessária." }, { status: 403 });
   }
 

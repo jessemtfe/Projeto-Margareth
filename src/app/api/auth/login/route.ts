@@ -33,6 +33,7 @@ export async function POST(request: Request) {
         email: identity.email,
         name: identity.name,
         role: identity.email === adminEmail ? "ADMIN" : "VIEWER",
+        profile: identity.email === adminEmail ? "PRESIDENTE" : "COOPERADO",
       },
       update: {
         email: identity.email,
@@ -43,7 +44,7 @@ export async function POST(request: Request) {
     if (identity.email === adminEmail && account.role !== "ADMIN") {
       account = await prisma.userAccount.update({
         where: { id: account.id },
-        data: { role: "ADMIN" },
+        data: { role: "ADMIN", profile: "PRESIDENTE" },
       });
     }
 
@@ -56,7 +57,13 @@ export async function POST(request: Request) {
 
     const session = await createAuthSession(account.id);
     const response = NextResponse.json({
-      user: { name: account.name, email: account.email, role: account.role },
+      user: {
+        name: account.name,
+        email: account.email,
+        role: account.role,
+        profile: account.profile,
+        cooperadoId: account.cooperadoId,
+      },
     });
     response.cookies.set(AUTH_COOKIE, session.token, {
       httpOnly: true,

@@ -1,11 +1,20 @@
 import { NextResponse } from "next/server";
 
-import { getCurrentUser, hasRole } from "../../../../lib/auth";
+import { getCurrentUser, hasProfile } from "../../../../lib/auth";
 import prisma from "../../../../lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-const formatGerador = (item: any) => ({
+type GeradorRecord = {
+  idGerador: number;
+  gerador: string;
+  tipo: string;
+  rejeito: unknown;
+  statu: string | null;
+  ultimaColeta: Date | null;
+};
+
+const formatGerador = (item: GeradorRecord) => ({
   id: item.idGerador,
   nome: item.gerador,
   tipo: item.tipo,
@@ -15,8 +24,12 @@ const formatGerador = (item: any) => ({
 });
 
 export async function GET() {
-  if (!(await getCurrentUser())) {
+  const user = await getCurrentUser();
+  if (!user) {
     return NextResponse.json({ error: "Autenticação necessária." }, { status: 401 });
+  }
+  if (!hasProfile(user, "BALANCEIRO", "PRESIDENTE")) {
+    return NextResponse.json({ error: "Acesso restrito aos geradores." }, { status: 403 });
   }
 
   const geradores = await prisma.cadastroGeradores.findMany({
@@ -31,7 +44,7 @@ export async function POST(request: Request) {
   if (!user) {
     return NextResponse.json({ error: "Autenticação necessária." }, { status: 401 });
   }
-  if (!hasRole(user, "EDITOR")) {
+  if (!hasProfile(user, "PRESIDENTE")) {
     return NextResponse.json({ error: "Permissão de edição necessária." }, { status: 403 });
   }
 
