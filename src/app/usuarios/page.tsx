@@ -161,7 +161,7 @@ export default function UsuariosPage() {
           </p>
           <h1 className="mt-1 text-2xl font-semibold text-[#1e2b20]">Gerenciar acessos</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-            Atribua o perfil funcional e, quando necessário, vincule a conta ao cadastro do Cooperado.
+            Contas novas ficam bloqueadas até que a Presidente defina o perfil, o vínculo e libere o acesso.
           </p>
         </header>
 

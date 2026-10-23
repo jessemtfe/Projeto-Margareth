@@ -143,7 +143,7 @@ export default function CadastroPage() {
                   />
                 </label>
                 <p className="text-xs leading-5 text-white/55">
-                  A senha deve ter uma letra maiúscula, uma minúscula e um número. Sua conta terá acesso somente leitura até a administração liberar edições.
+                  A senha deve ter uma letra maiúscula, uma minúscula e um número. Depois da confirmação, a pessoa administradora deverá liberar sua conta e definir seu perfil de acesso.
                 </p>
                 {error && (
                   <p role="alert" className="rounded-xl bg-rose-950/50 px-4 py-3 text-sm text-rose-100">
