@@ -179,18 +179,19 @@ export default function GeradoresPage() {
                 <tr>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Gerador</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Tipo</th>
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Rejeito</th>
+                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Rejeito histórico</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Status</th>
+                  {isPresident && <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Ações</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 bg-white">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={4} className="px-4 py-8 text-center text-sm text-slate-500">Carregando geradores...</td>
+                    <td colSpan={isPresident ? 5 : 4} className="px-4 py-8 text-center text-sm text-slate-500">Carregando geradores...</td>
                   </tr>
                 ) : geradores.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-4 py-8 text-center text-sm text-slate-500">Nenhum gerador cadastrado.</td>
+                    <td colSpan={isPresident ? 5 : 4} className="px-4 py-8 text-center text-sm text-slate-500">Nenhum gerador cadastrado.</td>
                   </tr>
                 ) : (
                   geradores.map((gerador) => (
@@ -206,11 +207,6 @@ export default function GeradoresPage() {
                           </div>
                         </div>
                       </td>
-                      {isPresident && <td className="px-4 py-4">
-                        <button type="button" onClick={() => void removeGerador(gerador.id)} className="text-sm font-semibold text-rose-700 hover:underline">
-                          Excluir
-                        </button>
-                      </td>}
                       <td className="px-4 py-4 text-sm text-slate-700">{gerador.tipo}</td>
                       <td className="px-4 py-4 text-sm text-slate-700">{gerador.rejeito}</td>
                       <td className="px-4 py-4">
@@ -225,6 +221,11 @@ export default function GeradoresPage() {
                           {gerador.status}
                         </span>
                       </td>
+                      {isPresident && <td className="px-4 py-4">
+                        <button type="button" onClick={() => void removeGerador(gerador.id)} className="text-sm font-semibold text-rose-700 hover:underline">
+                          Excluir
+                        </button>
+                      </td>}
                     </tr>
                   ))
                 )}

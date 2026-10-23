@@ -343,7 +343,7 @@ export default function CargasPage() {
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Gerador</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Material</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">Peso</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">Rejeito</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">Rejeito da carga</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Situação</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Próxima etapa</th>
                 </tr>
@@ -489,7 +489,7 @@ export default function CargasPage() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="carga-rejeito" className="mb-1.5 block text-sm font-medium text-slate-700">Rejeito (%)</label>
+                  <label htmlFor="carga-rejeito" className="mb-1.5 block text-sm font-medium text-slate-700">Rejeito da carga (%)</label>
                   <input
                     id="carga-rejeito"
                     type="number"

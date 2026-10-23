@@ -172,16 +172,17 @@ export default function PrecosPage() {
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Preço por kg</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Mês</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Status</th>
+                  {isPresident && <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Ações</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 bg-white">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={4} className="px-4 py-8 text-center text-sm text-slate-500">Carregando preços...</td>
+                    <td colSpan={isPresident ? 5 : 4} className="px-4 py-8 text-center text-sm text-slate-500">Carregando preços...</td>
                   </tr>
                 ) : precos.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-4 py-8 text-center text-sm text-slate-500">Nenhum preço cadastrado.</td>
+                    <td colSpan={isPresident ? 5 : 4} className="px-4 py-8 text-center text-sm text-slate-500">Nenhum preço cadastrado.</td>
                   </tr>
                 ) : (
                   precosOrdenados.map((item) => (
@@ -197,11 +198,6 @@ export default function PrecosPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-4">
-                        <button type="button" onClick={() => void removePreco(item.id)} className="text-sm font-semibold text-rose-700 hover:underline">
-                          Excluir
-                        </button>
-                      </td>
                       <td className="px-4 py-4 text-lg font-bold text-slate-900">{item.preco}</td>
                       <td className="px-4 py-4 text-sm text-slate-700">{item.mes}</td>
                       <td className="px-4 py-4">
@@ -215,6 +211,11 @@ export default function PrecosPage() {
                           {item.status}
                         </span>
                       </td>
+                      {isPresident && <td className="px-4 py-4">
+                        <button type="button" onClick={() => void removePreco(item.id)} className="text-sm font-semibold text-rose-700 hover:underline">
+                          Excluir
+                        </button>
+                      </td>}
                     </tr>
                   ))
                 )}

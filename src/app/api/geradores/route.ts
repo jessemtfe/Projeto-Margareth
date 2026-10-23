@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getCurrentUser, hasProfile } from "../../../../lib/auth";
+import { getRejectionAlerts } from "../../../../lib/carga-rules";
 import prisma from "../../../../lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -34,9 +35,30 @@ export async function GET() {
 
   const geradores = await prisma.cadastroGeradores.findMany({
     orderBy: { idGerador: "desc" },
+    include: {
+      cargas: {
+        select: { idCarga: true, gerador: true, geradorId: true, rejeito: true, status: true },
+        orderBy: { idCarga: "desc" },
+      },
+    },
   });
 
-  return NextResponse.json(geradores.map(formatGerador));
+  return NextResponse.json(
+    geradores.map((gerador) => {
+      const alertado = getRejectionAlerts(
+        gerador.cargas.map((carga) => ({
+          ...carga,
+          id: carga.idCarga,
+          rejeito: Number(carga.rejeito),
+        })),
+      ).length > 0;
+
+      return formatGerador({
+        ...gerador,
+        statu: alertado ? "Alertado" : gerador.statu,
+      });
+    }),
+  );
 }
 
 export async function POST(request: Request) {
