@@ -17,6 +17,7 @@ export default function CooperadosPage() {
   const [cooperados, setCooperados] = useState<Cooperado[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     nome: "",
     horas: "",
@@ -29,15 +30,10 @@ export default function CooperadosPage() {
     const response = await fetch(`/api/cooperados?id=${id}`, { method: "DELETE" });
     if (response.ok) setCooperados((items) => items.filter((item) => item.id !== id));
   }
-  async function editCooperado(item: Cooperado) {
-    const nome = window.prompt("Nome:", item.nome)?.trim();
-    const horas = window.prompt("Horas:", String(item.horas))?.trim();
-    const domingo = window.prompt("Domingos:", String(item.domingo))?.trim();
-    const kg = window.prompt("Kg triados:", String(item.kg))?.trim();
-    const situacao = window.prompt("Situação:", item.situacao)?.trim();
-    if (!nome || !horas || !domingo || !kg || !situacao || !item.id) return;
-    const response = await fetch("/api/cooperados", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: item.id, nome, horas: Number(horas), domingo: Number(domingo), kg: Number(kg), situacao }) });
-    if (response.ok) window.location.reload();
+  function editCooperado(item: Cooperado) {
+    setEditingId(item.id ?? null);
+    setFormData({ nome: item.nome, horas: String(item.horas), domingo: String(item.domingo), kg: String(item.kg), situacao: item.situacao });
+    setIsOpen(true);
   }
   useEffect(() => {
     const carregarCooperados = async () => {
@@ -82,9 +78,10 @@ export default function CooperadosPage() {
 
     try {
       const response = await fetch("/api/cooperados", {
-        method: "POST",
+        method: editingId ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          ...(editingId ? { id: editingId } : {}),
           nome,
           horas,
           domingo,
@@ -98,8 +95,9 @@ export default function CooperadosPage() {
       }
 
       const novoCooperado = (await response.json()) as Cooperado;
-      setCooperados((atual) => [novoCooperado, ...atual]);
+      setCooperados((atual) => editingId ? atual.map((item) => item.id === editingId ? novoCooperado : item) : [novoCooperado, ...atual]);
       setFormData({ nome: "", horas: "", domingo: "", kg: "", situacao: "Ativo" });
+      setEditingId(null);
       setIsOpen(false);
     } catch (error) {
       console.error(error);
@@ -230,7 +228,7 @@ export default function CooperadosPage() {
             <div className="mb-5 flex items-center justify-between gap-4">
               <div>
                 <p className="text-sm uppercase tracking-[0.2em] text-[#4d5f40]">Cadastro</p>
-                <h2 className="mt-1 text-2xl font-black text-slate-900">Novo cooperado</h2>
+                <h2 className="mt-1 text-2xl font-black text-slate-900">{editingId ? "Editar cooperado" : "Novo cooperado"}</h2>
               </div>
               <button type="button" onClick={() => setIsOpen(false)} className="rounded-full border border-slate-200 px-3 py-1.5 text-sm text-slate-600">Fechar</button>
             </div>
@@ -295,7 +293,7 @@ export default function CooperadosPage() {
 
               <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={() => setIsOpen(false)} className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700">Cancelar</button>
-                <button type="submit" className="rounded-full bg-[#465a3e] px-4 py-2 text-sm font-semibold text-white">Salvar cooperado</button>
+                <button type="submit" className="rounded-full bg-[#465a3e] px-4 py-2 text-sm font-semibold text-white">{editingId ? "Salvar alterações" : "Salvar cooperado"}</button>
               </div>
             </form>
           </div>

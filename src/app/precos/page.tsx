@@ -28,6 +28,7 @@ export default function PrecosPage() {
   const [precos, setPrecos] = useState<Preco[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     material: "",
     preco: "",
@@ -39,13 +40,10 @@ export default function PrecosPage() {
     const response = await fetch(`/api/precos?id=${id}`, { method: "DELETE" });
     if (response.ok) setPrecos((items) => items.filter((item) => item.id !== id));
   }
-  async function editPreco(item: Preco) {
-    const material = window.prompt("Material:", item.material)?.trim();
-    const preco = window.prompt("Preço por kg:", item.preco.replace(/[^\d,.-]/g, "").replace(",", "."))?.trim();
-    const mes = window.prompt("Competência (AAAA-MM):", item.mes)?.trim();
-    if (!material || !preco || !mes || !item.id) return;
-    const response = await fetch("/api/precos", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: item.id, material, preco: Number(preco), mes, status: item.status }) });
-    if (response.ok) window.location.reload();
+  function editPreco(item: Preco) {
+    setEditingId(item.id ?? null);
+    setFormData({ material: item.material, preco: item.preco.replace(/[^\d,.-]/g, "").replace(",", "."), mes: item.mes, status: item.status });
+    setIsOpen(true);
   }
   const [isPresident, setIsPresident] = useState(false);
 
@@ -95,9 +93,10 @@ export default function PrecosPage() {
 
     try {
       const response = await fetch("/api/precos", {
-        method: "POST",
+        method: editingId ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          ...(editingId ? { id: editingId } : {}),
           material,
           preco: Number(preco.replace(",", ".")),
           mes: formData.mes,
@@ -110,8 +109,9 @@ export default function PrecosPage() {
       }
 
       const novoPreco = (await response.json()) as Preco;
-      setPrecos((atual) => [novoPreco, ...atual]);
+      setPrecos((atual) => editingId ? atual.map((item) => item.id === editingId ? novoPreco : item) : [novoPreco, ...atual]);
       setFormData({ material: "", preco: "", mes: "2026-10", status: "Ativo" });
+      setEditingId(null);
       setIsOpen(false);
     } catch (error) {
       console.error(error);
@@ -240,7 +240,7 @@ export default function PrecosPage() {
             <div className="mb-5 flex items-center justify-between gap-4">
               <div>
                 <p className="text-sm uppercase tracking-[0.2em] text-[#4d5f40]">Configuração</p>
-                <h2 className="mt-1 text-2xl font-black text-slate-900">Novo preço</h2>
+                <h2 className="mt-1 text-2xl font-black text-slate-900">{editingId ? "Editar preço" : "Novo preço"}</h2>
               </div>
               <button type="button" onClick={() => setIsOpen(false)} className="rounded-full border border-slate-200 px-3 py-1.5 text-sm text-slate-600">Fechar</button>
             </div>
@@ -295,7 +295,7 @@ export default function PrecosPage() {
 
               <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={() => setIsOpen(false)} className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700">Cancelar</button>
-                <button type="submit" className="rounded-full bg-[#465a3e] px-4 py-2 text-sm font-semibold text-white">Salvar preço</button>
+                <button type="submit" className="rounded-full bg-[#465a3e] px-4 py-2 text-sm font-semibold text-white">{editingId ? "Salvar alterações" : "Salvar preço"}</button>
               </div>
             </form>
           </div>
