@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getCurrentUser, hasRole } from "../../../../lib/auth";
+import { getCurrentUser, hasProfile } from "../../../../lib/auth";
 import prisma from "../../../../lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +12,15 @@ const formatarPreco = (valor: number) =>
     minimumFractionDigits: 2,
   }).format(valor);
 
-const formatPreco = (item: any) => ({
+type PrecoRecord = {
+  idPreco: number;
+  material: string;
+  precoPorKg: unknown;
+  mes: string;
+  status: string;
+};
+
+const formatPreco = (item: PrecoRecord) => ({
   id: item.idPreco,
   material: item.material,
   preco: formatarPreco(Number(String(item.precoPorKg))),
@@ -21,8 +29,12 @@ const formatPreco = (item: any) => ({
 });
 
 export async function GET() {
-  if (!(await getCurrentUser())) {
+  const user = await getCurrentUser();
+  if (!user) {
     return NextResponse.json({ error: "Autenticação necessária." }, { status: 401 });
+  }
+  if (!hasProfile(user, "BALANCEIRO", "PRESIDENTE")) {
+    return NextResponse.json({ error: "Acesso restrito aos preços." }, { status: 403 });
   }
 
   const precos = await prisma.tabelaPrecos.findMany({
@@ -37,7 +49,7 @@ export async function POST(request: Request) {
   if (!user) {
     return NextResponse.json({ error: "Autenticação necessária." }, { status: 401 });
   }
-  if (!hasRole(user, "EDITOR")) {
+  if (!hasProfile(user, "PRESIDENTE")) {
     return NextResponse.json({ error: "Permissão de edição necessária." }, { status: 403 });
   }
 
@@ -49,6 +61,19 @@ export async function POST(request: Request) {
 
   if (!material || Number.isNaN(preco)) {
     return NextResponse.json({ error: "Dados inválidos" }, { status: 400 });
+  }
+
+  if (/^\d{4}-(0[1-9]|1[0-2])$/.test(mes)) {
+    const periodo = await prisma.rateioPeriodo.findUnique({
+      where: { competencia: mes },
+      select: { status: true },
+    });
+    if (periodo?.status === "FECHADO") {
+      return NextResponse.json(
+        { error: "Os preços do período fechado não podem ser alterados." },
+        { status: 409 },
+      );
+    }
   }
 
   const registro = await prisma.tabelaPrecos.create({

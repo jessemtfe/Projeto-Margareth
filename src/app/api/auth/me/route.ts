@@ -14,5 +14,7 @@ export async function GET() {
     name: user.name,
     email: user.email,
     role: user.role,
+    profile: user.profile,
+    cooperadoId: user.cooperadoId,
   });
 }

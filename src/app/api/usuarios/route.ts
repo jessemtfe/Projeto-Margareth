@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser, readJsonObject } from "../../../../lib/auth";
+import { getCurrentUser, hasProfile, readJsonObject } from "../../../../lib/auth";
 import prisma from "../../../../lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -9,7 +9,7 @@ export async function GET() {
   if (!currentUser) {
     return NextResponse.json({ error: "Autenticação necessária." }, { status: 401 });
   }
-  if (currentUser.role !== "ADMIN") {
+  if (!hasProfile(currentUser, "PRESIDENTE")) {
     return NextResponse.json({ error: "Acesso restrito à administração." }, { status: 403 });
   }
 
@@ -20,6 +20,8 @@ export async function GET() {
       email: true,
       name: true,
       role: true,
+      profile: true,
+      cooperadoId: true,
       active: true,
       createdAt: true,
     },
@@ -33,18 +35,27 @@ export async function PATCH(request: Request) {
   if (!currentUser) {
     return NextResponse.json({ error: "Autenticação necessária." }, { status: 401 });
   }
-  if (currentUser.role !== "ADMIN") {
+  if (!hasProfile(currentUser, "PRESIDENTE")) {
     return NextResponse.json({ error: "Acesso restrito à administração." }, { status: 403 });
   }
 
   const body = await readJsonObject(request);
   const id = typeof body?.id === "string" ? body.id : "";
   const role = body?.role;
+  const profile = body?.profile;
+  const cooperadoId = body?.cooperadoId;
   const active = body?.active;
 
   if (
     !id ||
     (role !== "EDITOR" && role !== "VIEWER") ||
+    (profile !== "COOPERADO" &&
+      profile !== "BALANCEIRO" &&
+      profile !== "PRESIDENTE") ||
+    (cooperadoId !== null &&
+      (typeof cooperadoId !== "number" ||
+        !Number.isSafeInteger(cooperadoId) ||
+        cooperadoId <= 0)) ||
     typeof active !== "boolean"
   ) {
     return NextResponse.json(
@@ -66,7 +77,7 @@ export async function PATCH(request: Request) {
   if (!existing) {
     return NextResponse.json({ error: "Usuário não encontrado." }, { status: 404 });
   }
-  if (existing.role === "ADMIN") {
+  if (existing.role === "ADMIN" && existing.id !== currentUser.id) {
     return NextResponse.json(
       { error: "O perfil de administração não pode ser concedido ou removido por esta tela." },
       { status: 403 },
@@ -75,8 +86,13 @@ export async function PATCH(request: Request) {
 
   const updated = await prisma.userAccount.update({
     where: { id },
-    data: { role, active },
-    select: { id: true, role: true, active: true },
+    data: {
+      role,
+      profile,
+      cooperadoId,
+      active,
+    },
+    select: { id: true, role: true, profile: true, cooperadoId: true, active: true },
   });
 
   return NextResponse.json(updated);

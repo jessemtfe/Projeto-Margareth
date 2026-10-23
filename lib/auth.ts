@@ -1,6 +1,6 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { cookies } from "next/headers";
-import type { UserRole } from "@prisma/client";
+import type { UserProfile, UserRole } from "@prisma/client";
 import prisma from "./prisma";
 
 export const AUTH_COOKIE = "ecocat_session";
@@ -12,6 +12,8 @@ export type AuthenticatedUser = {
   email: string;
   name: string;
   role: UserRole;
+  profile: UserProfile;
+  cooperadoId: number | null;
   active: boolean;
 };
 
@@ -37,6 +39,8 @@ export async function getAuthenticatedUser(
           email: true,
           name: true,
           role: true,
+          profile: true,
+          cooperadoId: true,
           active: true,
         },
       },
@@ -87,6 +91,13 @@ export function hasRole(
 ) {
   const roleRank = { VIEWER: 0, EDITOR: 1, ADMIN: 2 };
   return roleRank[user.role] >= roleRank[requiredRole];
+}
+
+export function hasProfile(
+  user: AuthenticatedUser,
+  ...profiles: UserProfile[]
+) {
+  return profiles.includes(user.profile);
 }
 
 export async function readJsonObject(

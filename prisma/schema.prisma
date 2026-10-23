@@ -13,15 +13,35 @@ enum UserRole {
   VIEWER
 }
 
+enum UserProfile {
+  COOPERADO
+  BALANCEIRO
+  PRESIDENTE
+}
+
+enum TurnoStatus {
+  ABERTO
+  FECHADO
+}
+
+enum RateioStatus {
+  ABERTO
+  FECHADO
+}
+
 model UserAccount {
   id         String        @id @default(cuid()) @db.VarChar(30)
   cognitoSub String        @unique @map("cognito_sub") @db.VarChar(64)
   email      String        @unique @db.VarChar(255)
   name       String        @db.VarChar(100)
   role       UserRole      @default(VIEWER)
+  profile    UserProfile   @default(COOPERADO)
+  cooperadoId Int?         @unique @map("cooperado_id")
   active     Boolean       @default(true)
   createdAt  DateTime      @default(now()) @map("created_at")
   sessions   AuthSession[]
+  cooperado  CadastroCooperados? @relation(fields: [cooperadoId], references: [idCooperado], onDelete: SetNull)
+  turnosCriados RateioPeriodo[] @relation("RateioFechadoPor")
 
   @@map("user_accounts")
 }
@@ -60,6 +80,10 @@ model CadastroCooperados {
   situacao    String  @db.VarChar(30)
 
   @@map("cadastro_cooperados")
+  conta       UserAccount?
+  turnos      Turno[]
+  producoes   Producao[]
+  memorias    MemoriaRateio[]
 }
 
 model TabelaPrecos {
@@ -84,4 +108,58 @@ model TabelaCargas {
   cadastroGerador CadastroGeradores? @relation(fields: [geradorId], references: [idGerador], onDelete: Restrict)
 
   @@map("tabela_cargas")
+}
+
+model Turno {
+  id         Int           @id @default(autoincrement())
+  cooperadoId Int          @map("cooperado_id")
+  inicio     DateTime
+  saida      DateTime?
+  status     TurnoStatus   @default(ABERTO)
+  cooperado  CadastroCooperados @relation(fields: [cooperadoId], references: [idCooperado], onDelete: Cascade)
+
+  @@index([cooperadoId, inicio])
+  @@index([status])
+  @@map("turnos")
+}
+
+model Producao {
+  id          Int       @id @default(autoincrement())
+  cooperadoId Int       @map("cooperado_id")
+  material    String    @db.VarChar(50)
+  kg          Decimal   @db.Decimal(10, 2)
+  data        DateTime  @db.Date
+  cooperado   CadastroCooperados @relation(fields: [cooperadoId], references: [idCooperado], onDelete: Cascade)
+
+  @@index([cooperadoId, data])
+  @@map("producoes")
+}
+
+model RateioPeriodo {
+  id           Int          @id @default(autoincrement())
+  competencia  String       @unique @db.VarChar(7)
+  status       RateioStatus @default(ABERTO)
+  fechadoEm    DateTime?    @map("fechado_em")
+  fechadoPorId String?      @map("fechado_por_id") @db.VarChar(30)
+  fechadoPor   UserAccount? @relation("RateioFechadoPor", fields: [fechadoPorId], references: [id], onDelete: SetNull)
+  memorias     MemoriaRateio[]
+
+  @@map("rateio_periodos")
+}
+
+model MemoriaRateio {
+  id            Int       @id @default(autoincrement())
+  periodoId     Int       @map("periodo_id")
+  cooperadoId   Int       @map("cooperado_id")
+  horas         Decimal   @db.Decimal(8, 2)
+  kgTriados     Decimal   @map("kg_triados") @db.Decimal(10, 2)
+  valorHoras    Decimal   @map("valor_horas") @db.Decimal(10, 2)
+  valorProducao Decimal   @map("valor_producao") @db.Decimal(10, 2)
+  valorTotal    Decimal   @map("valor_total") @db.Decimal(10, 2)
+  detalhes      Json?
+  periodo       RateioPeriodo @relation(fields: [periodoId], references: [id], onDelete: Cascade)
+  cooperado     CadastroCooperados @relation(fields: [cooperadoId], references: [idCooperado], onDelete: Restrict)
+
+  @@unique([periodoId, cooperadoId])
+  @@map("memorias_rateio")
 }

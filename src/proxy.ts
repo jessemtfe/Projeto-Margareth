@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { AUTH_COOKIE, getAuthenticatedUser, hasRole } from "../lib/auth";
+import { AUTH_COOKIE, getAuthenticatedUser, hasProfile } from "../lib/auth";
 
 const publicPaths = new Set(["/login", "/cadastro"]);
 
@@ -38,17 +38,13 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (pathname === "/usuarios" && user.role !== "ADMIN") {
+  if (pathname === "/usuarios" && !hasProfile(user, "PRESIDENTE")) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
-  if (
-    pathname.startsWith("/api/") &&
-    !["GET", "HEAD", "OPTIONS"].includes(request.method) &&
-    !hasRole(user, "EDITOR")
-  ) {
+  if (pathname.startsWith("/api/") && !user.active) {
     return NextResponse.json(
-      { error: "Sua conta não tem permissão para alterar dados." },
+      { error: "Sua conta está desativada." },
       { status: 403 },
     );
   }

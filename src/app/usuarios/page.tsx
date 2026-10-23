@@ -8,6 +8,8 @@ type ManagedUser = {
   email: string;
   name: string;
   role: "ADMIN" | "EDITOR" | "VIEWER";
+  profile: "COOPERADO" | "BALANCEIRO" | "PRESIDENTE";
+  cooperadoId: number | null;
   active: boolean;
   createdAt: string;
 };
@@ -20,6 +22,12 @@ const roleLabels: Record<ManagedUser["role"], string> = {
   ADMIN: "Administradora",
   EDITOR: "Pode editar",
   VIEWER: "Somente leitura",
+};
+
+const profileLabels: Record<ManagedUser["profile"], string> = {
+  COOPERADO: "Cooperado",
+  BALANCEIRO: "Balanceiro",
+  PRESIDENTE: "Presidente",
 };
 
 export default function UsuariosPage() {
@@ -74,9 +82,12 @@ export default function UsuariosPage() {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const role = formData.get("role");
+    const profile = formData.get("profile");
+    const cooperadoIdValue = formData.get("cooperadoId");
     const active = formData.get("active");
     if (
       (role !== "EDITOR" && role !== "VIEWER") ||
+      (profile !== "COOPERADO" && profile !== "BALANCEIRO" && profile !== "PRESIDENTE") ||
       (active !== "true" && active !== "false")
     ) {
       setError("Selecione um perfil e estado válidos.");
@@ -89,7 +100,13 @@ export default function UsuariosPage() {
       const response = await fetch("/api/usuarios", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: user.id, role, active: active === "true" }),
+        body: JSON.stringify({
+          id: user.id,
+          role,
+          profile,
+          cooperadoId: cooperadoIdValue ? Number(cooperadoIdValue) : null,
+          active: active === "true",
+        }),
       });
       const result = (await response.json()) as ApiError;
       if (!response.ok) {
@@ -103,6 +120,8 @@ export default function UsuariosPage() {
             ? {
                 ...currentUser,
                 role: role as ManagedUser["role"],
+                profile: profile as ManagedUser["profile"],
+                cooperadoId: cooperadoIdValue ? Number(cooperadoIdValue) : null,
                 active: active === "true",
               }
             : currentUser,
@@ -124,7 +143,7 @@ export default function UsuariosPage() {
           </p>
           <h1 className="mt-1 text-2xl font-semibold text-[#1e2b20]">Gerenciar acessos</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-            Contas novas começam somente com acesso de leitura. Libere a edição apenas para pessoas autorizadas.
+            Atribua o perfil funcional e, quando necessário, vincule a conta ao cadastro do Cooperado.
           </p>
         </header>
 
@@ -179,13 +198,37 @@ export default function UsuariosPage() {
                       <label className="text-xs font-medium text-slate-500">
                         Permissão
                         <select
+                          name="profile"
+                          defaultValue={user.profile}
+                          disabled={updatingId === user.id || !user.active}
+                          className="mt-1 min-h-10 w-full rounded-md border border-slate-300 bg-white px-2 text-sm text-slate-800 outline-none focus:border-[#42603c] focus:ring-2 focus:ring-[#42603c]/20 disabled:bg-slate-100"
+                        >
+                          {Object.entries(profileLabels).map(([value, label]) => (
+                            <option key={value} value={value}>{label}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="text-xs font-medium text-slate-500">
+                        ID Cooperado (opcional)
+                        <input
+                          name="cooperadoId"
+                          type="number"
+                          min="1"
+                          defaultValue={user.cooperadoId ?? ""}
+                          disabled={updatingId === user.id || !user.active || user.profile !== "COOPERADO"}
+                          className="mt-1 min-h-10 w-full rounded-md border border-slate-300 bg-white px-2 text-sm text-slate-800 outline-none focus:border-[#42603c] focus:ring-2 focus:ring-[#42603c]/20 disabled:bg-slate-100"
+                        />
+                      </label>
+                      <label className="text-xs font-medium text-slate-500">
+                        Compatibilidade
+                        <select
                           name="role"
                           defaultValue={user.role}
                           disabled={updatingId === user.id || !user.active}
                           className="mt-1 min-h-10 w-full rounded-md border border-slate-300 bg-white px-2 text-sm text-slate-800 outline-none focus:border-[#42603c] focus:ring-2 focus:ring-[#42603c]/20 disabled:bg-slate-100"
                         >
-                          <option value="VIEWER">Somente leitura</option>
-                          <option value="EDITOR">Pode editar</option>
+                          <option value="VIEWER">Legado: leitura</option>
+                          <option value="EDITOR">Legado: edição</option>
                         </select>
                       </label>
                       <label className="text-xs font-medium text-slate-500">

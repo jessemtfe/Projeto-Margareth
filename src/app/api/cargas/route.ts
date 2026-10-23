@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getCurrentUser, hasRole } from "../../../../lib/auth";
+import { getCurrentUser, hasProfile } from "../../../../lib/auth";
 import {
   isCargaStatus,
   isInitialCargaStatus,
@@ -56,8 +56,12 @@ function formatCarga(carga: {
 }
 
 export async function GET() {
-  if (!(await getCurrentUser())) {
+  const user = await getCurrentUser();
+  if (!user) {
     return NextResponse.json({ error: "Autenticação necessária." }, { status: 401 });
+  }
+  if (!hasProfile(user, "BALANCEIRO", "PRESIDENTE")) {
+    return NextResponse.json({ error: "Acesso restrito às cargas." }, { status: 403 });
   }
 
   const cargas = await prisma.tabelaCargas.findMany({
@@ -72,7 +76,7 @@ export async function POST(request: Request) {
   if (!user) {
     return NextResponse.json({ error: "Autenticação necessária." }, { status: 401 });
   }
-  if (!hasRole(user, "EDITOR")) {
+  if (!hasProfile(user, "BALANCEIRO", "PRESIDENTE")) {
     return NextResponse.json({ error: "Permissão de edição necessária." }, { status: 403 });
   }
 
@@ -162,7 +166,7 @@ export async function PATCH(request: Request) {
   if (!user) {
     return NextResponse.json({ error: "Autenticação necessária." }, { status: 401 });
   }
-  if (!hasRole(user, "EDITOR")) {
+  if (!hasProfile(user, "BALANCEIRO", "PRESIDENTE")) {
     return NextResponse.json({ error: "Permissão de edição necessária." }, { status: 403 });
   }
 

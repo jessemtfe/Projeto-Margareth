@@ -27,6 +27,7 @@ type Account = {
   name: string;
   email: string;
   role: "ADMIN" | "EDITOR" | "VIEWER";
+  profile: "COOPERADO" | "BALANCEIRO" | "PRESIDENTE";
 };
 
 function Brand() {
@@ -64,10 +65,21 @@ export default function AppSidebar() {
   const [accountError, setAccountError] = useState("");
 
   function renderLinks() {
-    const links =
-      account?.role === "ADMIN"
-        ? [...navigation, { href: "/usuarios", label: "Gerenciar acessos", icon: ShieldCheck }]
-        : navigation;
+    const links = account?.profile === "COOPERADO"
+      ? [
+          { href: "/", label: "Início", icon: House },
+          { href: "/cooperados", label: "Meus registros", icon: UsersRound },
+        ]
+      : account?.profile === "BALANCEIRO"
+        ? [
+            { href: "/", label: "Início", icon: House },
+            { href: "/geradores", label: "Geradores", icon: Factory },
+            { href: "/cargas", label: "Entrada de carga", icon: Truck },
+          ]
+        : [
+            ...navigation,
+            { href: "/usuarios", label: "Gerenciar acessos", icon: ShieldCheck },
+          ];
 
     return links.map(({ href, label, icon: Icon }) => {
       const isActive =
@@ -144,11 +156,11 @@ export default function AppSidebar() {
             <p className="truncate text-sm font-semibold">{account.name}</p>
             <p className="truncate text-xs text-white/60">{account.email}</p>
             <p className="mt-1 text-xs text-white/60">
-              {account.role === "ADMIN"
-                ? "Administradora"
-                : account.role === "EDITOR"
-                  ? "Editora"
-                  : "Somente leitura"}
+              {account.profile === "PRESIDENTE"
+                ? "Presidente"
+                : account.profile === "BALANCEIRO"
+                  ? "Balanceiro"
+                  : "Cooperado"}
             </p>
           </div>
         )}
