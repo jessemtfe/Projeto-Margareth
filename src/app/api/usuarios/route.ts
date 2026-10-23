@@ -63,6 +63,12 @@ export async function PATCH(request: Request) {
       { status: 400 },
     );
   }
+  if (profile !== "COOPERADO" && cooperadoId !== null) {
+    return NextResponse.json(
+      { error: "Somente contas de Cooperado podem ter um cadastro vinculado." },
+      { status: 400 },
+    );
+  }
   if (id === currentUser.id) {
     return NextResponse.json(
       { error: "A conta administradora atual não pode ser alterada por aqui." },
@@ -82,6 +88,26 @@ export async function PATCH(request: Request) {
       { error: "O perfil de administração não pode ser concedido ou removido por esta tela." },
       { status: 403 },
     );
+  }
+  if (cooperadoId !== null) {
+    const cooperado = await prisma.cadastroCooperados.findUnique({
+      where: { idCooperado: cooperadoId },
+      select: { idCooperado: true },
+    });
+    if (!cooperado) {
+      return NextResponse.json({ error: "Cooperado não encontrado." }, { status: 400 });
+    }
+
+    const linkedAccount = await prisma.userAccount.findFirst({
+      where: { cooperadoId, id: { not: id } },
+      select: { name: true },
+    });
+    if (linkedAccount) {
+      return NextResponse.json(
+        { error: `Este cadastro já está vinculado à conta ${linkedAccount.name}.` },
+        { status: 409 },
+      );
+    }
   }
 
   const updated = await prisma.userAccount.update({
