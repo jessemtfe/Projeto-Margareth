@@ -99,7 +99,7 @@ export async function POST(request: Request) {
       tipo,
       rejeito: 0,
       ultimaColeta: new Date(),
-      statu: status || "Normal",
+      statu: "Normal",
     },
   });
 
