@@ -51,6 +51,20 @@ export async function POST(request: Request) {
       });
     }
 
+    if (account.role !== "ADMIN" && account.profile === "COOPERADO" && !account.cooperadoId) {
+      const matchingCooperados = await prisma.cadastroCooperados.findMany({
+        where: { nome: account.name, conta: null },
+        select: { idCooperado: true },
+        take: 2,
+      });
+      if (matchingCooperados.length === 1) {
+        account = await prisma.userAccount.update({
+          where: { id: account.id },
+          data: { cooperadoId: matchingCooperados[0].idCooperado },
+        });
+      }
+    }
+
     if (!account.active) {
       return NextResponse.json(
         { error: "Esta conta está desativada. Procure a pessoa administradora." },

@@ -33,13 +33,25 @@ export async function GET() {
   if (!user) {
     return NextResponse.json({ error: "Autenticação necessária." }, { status: 401 });
   }
-  if (!hasProfile(user, "BALANCEIRO", "PRESIDENTE")) {
+  if (!hasProfile(user, "COOPERADO", "BALANCEIRO", "PRESIDENTE")) {
     return NextResponse.json({ error: "Acesso restrito aos preços." }, { status: 403 });
   }
 
   const precos = await prisma.tabelaPrecos.findMany({
     orderBy: { idPreco: "desc" },
+    select: { idPreco: true, material: true, precoPorKg: true, mes: true, status: true },
   });
+
+  if (user.profile === "COOPERADO") {
+    const materiais = Array.from(
+      new Map(
+        precos
+          .filter((item) => item.status.toLowerCase() === "ativo")
+          .map((item) => [item.material.trim().toLowerCase(), item.material.trim()]),
+      ).values(),
+    );
+    return NextResponse.json(materiais);
+  }
 
   return NextResponse.json(precos.map(formatPreco));
 }
