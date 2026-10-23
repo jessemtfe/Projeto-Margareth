@@ -48,6 +48,13 @@ export default function GeradoresPage() {
     const response = await fetch(`/api/geradores?id=${id}`, { method: "DELETE" });
     if (response.ok) setGeradores((items) => items.filter((item) => item.id !== id));
   }
+  async function editGerador(gerador: Gerador) {
+    const nome = window.prompt("Nome do gerador:", gerador.nome)?.trim();
+    const tipo = window.prompt("Tipo do gerador:", gerador.tipo)?.trim();
+    if (!nome || !tipo || !gerador.id) return;
+    const response = await fetch("/api/geradores", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: gerador.id, nome, tipo }) });
+    if (response.ok) window.location.reload();
+  }
 
   useEffect(() => {
     void fetch("/api/auth/me", { cache: "no-store" })
@@ -245,6 +252,7 @@ export default function GeradoresPage() {
                         </span>
                       </td>
                       {isPresident && <td className="px-4 py-4">
+                        <button type="button" onClick={() => void editGerador(gerador)} className="mr-3 text-sm font-semibold text-[#465a3e] hover:underline">Editar</button>
                         <button type="button" onClick={() => void removeGerador(gerador.id)} className="text-sm font-semibold text-rose-700 hover:underline">
                           Excluir
                         </button>

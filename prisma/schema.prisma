@@ -96,6 +96,7 @@ model TabelaPrecos {
   mes        String  @db.VarChar(20)
   status     String  @db.VarChar(30)
 
+  @@unique([material, mes])
   @@map("tabela_precos")
 }
 

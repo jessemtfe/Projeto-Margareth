@@ -39,6 +39,14 @@ export default function PrecosPage() {
     const response = await fetch(`/api/precos?id=${id}`, { method: "DELETE" });
     if (response.ok) setPrecos((items) => items.filter((item) => item.id !== id));
   }
+  async function editPreco(item: Preco) {
+    const material = window.prompt("Material:", item.material)?.trim();
+    const preco = window.prompt("Preço por kg:", item.preco.replace(/[^\d,.-]/g, "").replace(",", "."))?.trim();
+    const mes = window.prompt("Competência (AAAA-MM):", item.mes)?.trim();
+    if (!material || !preco || !mes || !item.id) return;
+    const response = await fetch("/api/precos", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: item.id, material, preco: Number(preco), mes, status: item.status }) });
+    if (response.ok) window.location.reload();
+  }
   const [isPresident, setIsPresident] = useState(false);
 
   useEffect(() => {
@@ -212,6 +220,7 @@ export default function PrecosPage() {
                         </span>
                       </td>
                       {isPresident && <td className="px-4 py-4">
+                        <button type="button" onClick={() => void editPreco(item)} className="mr-3 text-sm font-semibold text-[#465a3e] hover:underline">Editar</button>
                         <button type="button" onClick={() => void removePreco(item.id)} className="text-sm font-semibold text-rose-700 hover:underline">
                           Excluir
                         </button>

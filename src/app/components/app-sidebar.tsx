@@ -12,6 +12,7 @@ import {
   Tags,
   Truck,
   UsersRound,
+  Bell,
   X,
 } from "lucide-react";
 
@@ -79,6 +80,7 @@ export default function AppSidebar() {
         : [
             ...navigation,
             { href: "/usuarios", label: "Gerenciar acessos", icon: ShieldCheck },
+            { href: "/alertas", label: "Alertas", icon: Bell },
           ];
 
     return links.map(({ href, label, icon: Icon }) => {
