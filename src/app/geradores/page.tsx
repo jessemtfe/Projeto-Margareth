@@ -8,9 +8,16 @@ type Gerador = {
   id?: number;
   nome: string;
   tipo: string;
-  rejeito: string;
+  rejeito: string | null;
   status: string;
   ultimaColeta: number | string;
+  resumo?: {
+    totalCargas: number;
+    ultimaRejeito: number | null;
+    sequenciaAtual: number;
+    alertaAtual: boolean;
+    historico: Array<{ id: number; rejeito: number; status: string; data: string }>;
+  };
 };
 
 function formatCollectionDate(value: number | string) {
@@ -34,8 +41,6 @@ export default function GeradoresPage() {
   const [formData, setFormData] = useState({
     nome: "",
     tipo: "Residencial",
-    rejeito: "",
-    status: "Normal",
   });
   const [isPresident, setIsPresident] = useState(false);
   async function removeGerador(id?: number) {
@@ -82,9 +87,7 @@ export default function GeradoresPage() {
     event.preventDefault();
 
     const nome = formData.nome.trim();
-    const rejeito = formData.rejeito.trim();
-
-    if (!nome || !rejeito) {
+    if (!nome) {
       return;
     }
 
@@ -95,8 +98,6 @@ export default function GeradoresPage() {
         body: JSON.stringify({
           nome,
           tipo: formData.tipo,
-          rejeito: Number(rejeito),
-          status: formData.status,
         }),
       });
 
@@ -106,7 +107,7 @@ export default function GeradoresPage() {
 
       const novoGerador = (await response.json()) as Gerador;
       setGeradores((atual) => [novoGerador, ...atual]);
-      setFormData({ nome: "", tipo: "Residencial", rejeito: "", status: "Normal" });
+      setFormData({ nome: "", tipo: "Residencial" });
       setIsOpen(false);
     } catch (error) {
       console.error(error);
@@ -179,7 +180,7 @@ export default function GeradoresPage() {
                 <tr>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Gerador</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Tipo</th>
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Rejeito histórico</th>
+                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Resumo do histórico</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Status</th>
                   {isPresident && <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Ações</th>}
                 </tr>
@@ -195,7 +196,7 @@ export default function GeradoresPage() {
                   </tr>
                 ) : (
                   geradores.map((gerador) => (
-                    <tr key={gerador.id ?? `${gerador.nome}-${gerador.rejeito}`} className="hover:bg-slate-50">
+                    <tr key={gerador.id ?? gerador.nome} className="hover:bg-slate-50">
                       <td className="px-4 py-4">
                         <div className="flex items-center gap-3">
                           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#edf0e5] text-[#465a3e]">
@@ -208,7 +209,29 @@ export default function GeradoresPage() {
                         </div>
                       </td>
                       <td className="px-4 py-4 text-sm text-slate-700">{gerador.tipo}</td>
-                      <td className="px-4 py-4 text-sm text-slate-700">{gerador.rejeito}</td>
+                      <td className="px-4 py-4 text-sm text-slate-700">
+                        <div className="space-y-1">
+                          <p><span className="font-semibold">{gerador.resumo?.totalCargas ?? 0}</span> carga(s)</p>
+                          <p className="text-xs text-slate-500">
+                            Última: {gerador.resumo?.ultimaRejeito == null ? "Sem registro" : `${gerador.resumo.ultimaRejeito.toFixed(2)}%`}
+                          </p>
+                          {gerador.resumo?.historico.length ? (
+                            <div className="mt-2 space-y-1 border-t border-slate-100 pt-2 text-xs">
+                              {gerador.resumo.historico.map((carga) => (
+                                <p key={carga.id} className="flex justify-between gap-3">
+                                  <span>Carga #{carga.id}</span>
+                                  <span className={carga.rejeito > 25 ? "font-semibold text-amber-700" : "text-slate-500"}>
+                                    {carga.rejeito.toFixed(2)}%
+                                  </span>
+                                </p>
+                              ))}
+                            </div>
+                          ) : null}
+                          {gerador.resumo?.alertaAtual && (
+                            <p className="text-xs font-semibold text-amber-700">3 consecutivas acima de 25%</p>
+                          )}
+                        </div>
+                      </td>
                       <td className="px-4 py-4">
                         <span
                           className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
@@ -257,7 +280,7 @@ export default function GeradoresPage() {
                 />
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
+              <div>
                 <div>
                   <label className="mb-1 block text-sm font-medium text-slate-700">Tipo</label>
                   <select
@@ -271,27 +294,7 @@ export default function GeradoresPage() {
                   </select>
                 </div>
 
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-700">Rejeito (%)</label>
-                  <input
-                    value={formData.rejeito}
-                    onChange={(event) => setFormData((current) => ({ ...current, rejeito: event.target.value }))}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none placeholder:text-slate-400"
-                    placeholder="Ex: 18"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">Status</label>
-                <select
-                  value={formData.status}
-                  onChange={(event) => setFormData((current) => ({ ...current, status: event.target.value }))}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none"
-                >
-                  <option value="Normal">Normal</option>
-                  <option value="Alertado">Alertado</option>
-                </select>
+                <p className="mt-2 text-xs text-slate-500">O rejeito será informado em cada carga e calculado automaticamente no histórico deste gerador.</p>
               </div>
 
               <div className="flex justify-end gap-3 pt-2">

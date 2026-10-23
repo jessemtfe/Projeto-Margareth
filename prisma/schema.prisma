@@ -120,6 +120,7 @@ model AlertaRejeito {
   criadoEm    DateTime @default(now()) @map("criado_em")
   cargas      Json
   lido        Boolean  @default(false)
+  ativo       Boolean  @default(true)
   gerador     CadastroGeradores @relation(fields: [geradorId], references: [idGerador], onDelete: Cascade)
 
   @@index([geradorId, criadoEm])
