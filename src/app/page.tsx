@@ -55,6 +55,7 @@ export default async function HomePage() {
   let ultimoCooperado: { idCooperado: number; nome: string } | null = null;
   let ultimoGerador: { idGerador: number; gerador: string } | null = null;
   let ultimoPreco: { idPreco: number; material: string; mes: string } | null = null;
+  let ultimaCarga: { idCarga: number; gerador: string; material: string; status: string } | null = null;
 
   try {
     const cooperadoVisibility = {
@@ -71,6 +72,7 @@ export default async function HomePage() {
       cooperadoRecente,
       geradorRecente,
       precoRecente,
+      cargaRecente,
     ] = await Promise.all([
       prisma.cadastroCooperados.count({ where: cooperadoVisibility }),
       prisma.cadastroCooperados.count({
@@ -98,6 +100,10 @@ export default async function HomePage() {
         orderBy: { idPreco: "desc" },
         select: { idPreco: true, material: true, mes: true },
       }),
+      prisma.tabelaCargas.findFirst({
+        orderBy: { idCarga: "desc" },
+        select: { idCarga: true, gerador: true, material: true, status: true },
+      }),
     ]);
 
     totalCooperados = cooperadosCount;
@@ -110,6 +116,7 @@ export default async function HomePage() {
     ultimoCooperado = cooperadoRecente;
     ultimoGerador = geradorRecente;
     ultimoPreco = precoRecente;
+    ultimaCarga = cargaRecente;
   } catch {
     databaseAvailable = false;
   }
@@ -185,6 +192,18 @@ export default async function HomePage() {
             category: "Preços",
             icon: Tags,
             tone: "bg-amber-100 text-amber-700",
+          },
+        ]
+      : []),
+    ...(ultimaCarga
+      ? [
+          {
+            id: `carga-${ultimaCarga.idCarga}`,
+            title: "Entrada de carga mais recente",
+            detail: `#${ultimaCarga.idCarga} · ${ultimaCarga.gerador} · ${ultimaCarga.material}`,
+            category: ultimaCarga.status,
+            icon: Scale,
+            tone: "bg-sky-100 text-sky-700",
           },
         ]
       : []),

@@ -1,8 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Coins, Plus, TrendingUp } from "lucide-react";
+import { Coins, Plus, TrendingUp } from "lucide-react";
 
 type Preco = {
   id?: number;
@@ -127,13 +126,6 @@ export default function PrecosPage() {
     <main className="min-h-screen bg-[#f4f7f2] px-6 py-8 lg:px-10">
       <div className="mx-auto max-w-6xl">
         <header className="mb-8 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700">
-              <ArrowLeft className="h-4 w-4" />
-              Voltar
-            </Link>
-          </div>
-
           {isPresident && <button
             type="button"
             onClick={() => setIsOpen(true)}
