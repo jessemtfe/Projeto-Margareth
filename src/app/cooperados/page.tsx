@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ArrowLeft, BadgeCheck, Clock3, Plus, UserRound, WalletCards } from "lucide-react";
 
@@ -14,6 +15,7 @@ type Cooperado = {
 };
 
 export default function CooperadosPage() {
+  const router = useRouter();
   const [cooperados, setCooperados] = useState<Cooperado[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
@@ -24,6 +26,30 @@ export default function CooperadosPage() {
     kg: "",
     situacao: "Ativo",
   });
+
+  useEffect(() => {
+    let active = true;
+
+    fetch("/api/auth/me", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) {
+          return null;
+        }
+        return (await response.json()) as { profile?: string };
+      })
+      .then((account) => {
+        if (active && account?.profile === "COOPERADO") {
+          router.replace("/meus-registros");
+        }
+      })
+      .catch((error) => {
+        console.error("Não foi possível verificar o perfil da conta.", error);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [router]);
 
   useEffect(() => {
     const carregarCooperados = async () => {
