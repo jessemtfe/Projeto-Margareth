@@ -14,6 +14,12 @@ type ManagedUser = {
   createdAt: string;
 };
 
+type CooperadoOption = {
+  id: number;
+  nome: string;
+  situacao: string;
+};
+
 type ApiError = {
   error?: string;
 };
@@ -32,6 +38,7 @@ const profileLabels: Record<ManagedUser["profile"], string> = {
 
 export default function UsuariosPage() {
   const [users, setUsers] = useState<ManagedUser[]>([]);
+  const [cooperados, setCooperados] = useState<CooperadoOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState("");
   const [error, setError] = useState("");
@@ -41,12 +48,16 @@ export default function UsuariosPage() {
 
     async function loadUsers() {
       try {
-        const response = await fetch("/api/usuarios", { cache: "no-store" });
-        const result: unknown = await response.json();
+        const [usersResponse, cooperadosResponse] = await Promise.all([
+          fetch("/api/usuarios", { cache: "no-store" }),
+          fetch("/api/cooperados", { cache: "no-store" }),
+        ]);
+        const result: unknown = await usersResponse.json();
+        const cooperadosResult: unknown = await cooperadosResponse.json();
         if (!isCurrent) {
           return;
         }
-        if (!response.ok) {
+        if (!usersResponse.ok) {
           const message =
             result !== null &&
             typeof result === "object" &&
@@ -58,6 +69,9 @@ export default function UsuariosPage() {
           return;
         }
         setUsers(result as ManagedUser[]);
+        if (cooperadosResponse.ok && Array.isArray(cooperadosResult)) {
+          setCooperados(cooperadosResult as CooperadoOption[]);
+        }
       } catch {
         if (isCurrent) {
           setError("Não foi possível conectar ao serviço de contas.");
@@ -104,7 +118,9 @@ export default function UsuariosPage() {
           id: user.id,
           role,
           profile,
-          cooperadoId: cooperadoIdValue ? Number(cooperadoIdValue) : null,
+          cooperadoId: profile === "COOPERADO" && cooperadoIdValue
+            ? Number(cooperadoIdValue)
+            : null,
           active: active === "true",
         }),
       });
@@ -121,7 +137,9 @@ export default function UsuariosPage() {
                 ...currentUser,
                 role: role as ManagedUser["role"],
                 profile: profile as ManagedUser["profile"],
-                cooperadoId: cooperadoIdValue ? Number(cooperadoIdValue) : null,
+                cooperadoId: profile === "COOPERADO" && cooperadoIdValue
+                  ? Number(cooperadoIdValue)
+                  : null,
                 active: active === "true",
               }
             : currentUser,
@@ -179,7 +197,7 @@ export default function UsuariosPage() {
                 <form
                   key={user.id}
                   onSubmit={(event) => void updateUser(event, user)}
-                  className="grid gap-4 px-4 py-4 sm:grid-cols-[minmax(0,1fr)_180px_150px_auto] sm:items-center sm:px-5"
+                  className="grid gap-4 px-4 py-4 sm:grid-cols-[minmax(0,1fr)_180px_220px_150px_auto] sm:items-center sm:px-5"
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-slate-900">{user.name}</p>
@@ -209,15 +227,21 @@ export default function UsuariosPage() {
                         </select>
                       </label>
                       <label className="text-xs font-medium text-slate-500">
-                        ID Cooperado (opcional)
-                        <input
+                        Cooperado vinculado
+                        <select
                           name="cooperadoId"
-                          type="number"
-                          min="1"
+                          aria-label={`Cooperado vinculado a ${user.name}`}
                           defaultValue={user.cooperadoId ?? ""}
-                          disabled={updatingId === user.id || !user.active || user.profile !== "COOPERADO"}
+                          disabled={updatingId === user.id || !user.active}
                           className="mt-1 min-h-10 w-full rounded-md border border-slate-300 bg-white px-2 text-sm text-slate-800 outline-none focus:border-[#42603c] focus:ring-2 focus:ring-[#42603c]/20 disabled:bg-slate-100"
-                        />
+                        >
+                          <option value="">Sem vínculo</option>
+                          {cooperados.map((cooperado) => (
+                            <option key={cooperado.id} value={cooperado.id}>
+                              {cooperado.nome} ({cooperado.id})
+                            </option>
+                          ))}
+                        </select>
                       </label>
                       <label className="text-xs font-medium text-slate-500">
                         Compatibilidade
