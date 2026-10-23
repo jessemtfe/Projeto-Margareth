@@ -38,6 +38,7 @@ export default function GeradoresPage() {
   const [geradores, setGeradores] = useState<Gerador[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     nome: "",
     tipo: "Residencial",
@@ -48,12 +49,10 @@ export default function GeradoresPage() {
     const response = await fetch(`/api/geradores?id=${id}`, { method: "DELETE" });
     if (response.ok) setGeradores((items) => items.filter((item) => item.id !== id));
   }
-  async function editGerador(gerador: Gerador) {
-    const nome = window.prompt("Nome do gerador:", gerador.nome)?.trim();
-    const tipo = window.prompt("Tipo do gerador:", gerador.tipo)?.trim();
-    if (!nome || !tipo || !gerador.id) return;
-    const response = await fetch("/api/geradores", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: gerador.id, nome, tipo }) });
-    if (response.ok) window.location.reload();
+  function editGerador(gerador: Gerador) {
+    setEditingId(gerador.id ?? null);
+    setFormData({ nome: gerador.nome, tipo: gerador.tipo });
+    setIsOpen(true);
   }
 
   useEffect(() => {
@@ -100,9 +99,10 @@ export default function GeradoresPage() {
 
     try {
       const response = await fetch("/api/geradores", {
-        method: "POST",
+        method: editingId ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          ...(editingId ? { id: editingId } : {}),
           nome,
           tipo: formData.tipo,
         }),
@@ -113,8 +113,9 @@ export default function GeradoresPage() {
       }
 
       const novoGerador = (await response.json()) as Gerador;
-      setGeradores((atual) => [novoGerador, ...atual]);
+      setGeradores((atual) => editingId ? atual.map((item) => item.id === editingId ? novoGerador : item) : [novoGerador, ...atual]);
       setFormData({ nome: "", tipo: "Residencial" });
+      setEditingId(null);
       setIsOpen(false);
     } catch (error) {
       console.error(error);
@@ -272,7 +273,7 @@ export default function GeradoresPage() {
             <div className="mb-5 flex items-center justify-between gap-4">
               <div>
                 <p className="text-sm uppercase tracking-[0.2em] text-[#4d5f40]">Cadastro</p>
-                <h2 className="mt-1 text-2xl font-black text-slate-900">Novo gerador</h2>
+                <h2 className="mt-1 text-2xl font-black text-slate-900">{editingId ? "Editar gerador" : "Novo gerador"}</h2>
               </div>
               <button type="button" onClick={() => setIsOpen(false)} className="rounded-full border border-slate-200 px-3 py-1.5 text-sm text-slate-600">Fechar</button>
             </div>
@@ -307,7 +308,7 @@ export default function GeradoresPage() {
 
               <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={() => setIsOpen(false)} className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700">Cancelar</button>
-                <button type="submit" className="rounded-full bg-[#465a3e] px-4 py-2 text-sm font-semibold text-white">Salvar gerador</button>
+                <button type="submit" className="rounded-full bg-[#465a3e] px-4 py-2 text-sm font-semibold text-white">{editingId ? "Salvar alterações" : "Salvar gerador"}</button>
               </div>
             </form>
           </div>
