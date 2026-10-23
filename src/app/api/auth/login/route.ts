@@ -76,6 +76,7 @@ export async function POST(request: Request) {
                   domingo: 0,
                   kgTriados: 0,
                   situacao: "Ativo",
+                  origem: "AUTOMATICO",
                 },
                 select: { idCooperado: true },
               })

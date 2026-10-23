@@ -33,7 +33,10 @@ export async function GET() {
   }
 
   const cooperados = await prisma.cadastroCooperados.findMany({
-    where: user.profile === "COOPERADO" ? { idCooperado: user.cooperadoId ?? -1 } : undefined,
+    where:
+      user.profile === "COOPERADO"
+        ? { idCooperado: user.cooperadoId ?? -1 }
+        : { OR: [{ origem: "MANUAL" }, { conta: { isNot: null } }] },
     orderBy: { idCooperado: "desc" },
   });
 
@@ -67,6 +70,7 @@ export async function POST(request: Request) {
       domingo,
       kgTriados,
       situacao: situacao || "Ativo",
+      origem: "MANUAL",
     },
   });
 
