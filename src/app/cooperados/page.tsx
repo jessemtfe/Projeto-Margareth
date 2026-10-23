@@ -29,6 +29,16 @@ export default function CooperadosPage() {
     const response = await fetch(`/api/cooperados?id=${id}`, { method: "DELETE" });
     if (response.ok) setCooperados((items) => items.filter((item) => item.id !== id));
   }
+  async function editCooperado(item: Cooperado) {
+    const nome = window.prompt("Nome:", item.nome)?.trim();
+    const horas = window.prompt("Horas:", String(item.horas))?.trim();
+    const domingo = window.prompt("Domingos:", String(item.domingo))?.trim();
+    const kg = window.prompt("Kg triados:", String(item.kg))?.trim();
+    const situacao = window.prompt("Situação:", item.situacao)?.trim();
+    if (!nome || !horas || !domingo || !kg || !situacao || !item.id) return;
+    const response = await fetch("/api/cooperados", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: item.id, nome, horas: Number(horas), domingo: Number(domingo), kg: Number(kg), situacao }) });
+    if (response.ok) window.location.reload();
+  }
   useEffect(() => {
     const carregarCooperados = async () => {
       try {
@@ -200,6 +210,7 @@ export default function CooperadosPage() {
                         </span>
                       </td>
                       <td className="px-4 py-4">
+                        <button type="button" onClick={() => void editCooperado(cooperado)} className="mr-3 text-sm font-semibold text-[#465a3e] hover:underline">Editar</button>
                         <button type="button" onClick={() => void removeCooperado(cooperado.id)} className="text-sm font-semibold text-rose-700 hover:underline">
                           Excluir
                         </button>

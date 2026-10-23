@@ -94,6 +94,13 @@ export async function POST(request: Request) {
         { status: 409 },
       );
     }
+    const duplicado = await prisma.tabelaPrecos.findFirst({
+      where: { material, mes },
+      select: { idPreco: true },
+    });
+    if (duplicado) {
+      return NextResponse.json({ error: "Já existe um preço para este material nesta competência." }, { status: 409 });
+    }
   }
 
   const registro = await prisma.tabelaPrecos.create({
@@ -126,6 +133,11 @@ export async function PATCH(request: Request) {
   if (!atual) return NextResponse.json({ error: "Preço não encontrado." }, { status: 404 });
   const periodo = await prisma.rateioPeriodo.findUnique({ where: { competencia: mes }, select: { status: true } });
   if (periodo?.status === "FECHADO") return NextResponse.json({ error: "O período está fechado." }, { status: 409 });
+  const duplicado = await prisma.tabelaPrecos.findFirst({
+    where: { material, mes, idPreco: { not: id } },
+    select: { idPreco: true },
+  });
+  if (duplicado) return NextResponse.json({ error: "Já existe um preço para este material nesta competência." }, { status: 409 });
   const registro = await prisma.tabelaPrecos.update({ where: { idPreco: id }, data: { material, precoPorKg: preco, mes, status } });
   return NextResponse.json(formatPreco(registro));
 }
