@@ -51,6 +51,7 @@ export default function MeusRegistrosPage() {
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [producoes, setProducoes] = useState<Producao[]>([]);
   const [memorias, setMemorias] = useState<Memoria[]>([]);
+  const [materiais, setMateriais] = useState<string[]>([]);
   const [material, setMaterial] = useState("");
   const [kg, setKg] = useState("");
   const [error, setError] = useState("");
@@ -65,16 +66,20 @@ export default function MeusRegistrosPage() {
         fetch("/api/turnos", { cache: "no-store" }),
         fetch("/api/producao", { cache: "no-store" }),
         fetch("/api/rateio", { cache: "no-store" }),
+        fetch("/api/precos", { cache: "no-store" }),
       ]);
-      if (responses.some((response) => !response.ok)) {
+      if (responses.slice(0, 3).some((response) => !response.ok)) {
         throw new Error("Não foi possível carregar seus registros.");
       }
-      const [turnosData, producaoData, memoriaData] = await Promise.all(
+      const [turnosData, producaoData, memoriaData, materiaisData] = await Promise.all(
         responses.map((response) => response.json()),
       );
       setTurnos(turnosData as Turno[]);
       setProducoes(producaoData as Producao[]);
       setMemorias(memoriaData as Memoria[]);
+      if (responses[3].ok && Array.isArray(materiaisData)) {
+        setMateriais(materiaisData as string[]);
+      }
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Não foi possível carregar seus registros.");
     } finally {
@@ -196,7 +201,10 @@ export default function MeusRegistrosPage() {
             <h2 className="text-lg font-bold text-slate-900">Registrar produção</h2>
             <p className="mt-2 text-sm text-slate-500">Informe o material e os quilogramas separados.</p>
             <form onSubmit={(event) => void registerProduction(event)} className="mt-5 grid gap-3 sm:grid-cols-2">
-              <input value={material} onChange={(event) => setMaterial(event.target.value)} required placeholder="Material" className="min-h-10 rounded-lg border border-slate-300 px-3 text-sm" />
+              <select value={material} onChange={(event) => setMaterial(event.target.value)} required className="min-h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm">
+                <option value="">Selecione o material</option>
+                {materiais.map((item) => <option key={item} value={item}>{item}</option>)}
+              </select>
               <input value={kg} onChange={(event) => setKg(event.target.value)} required min="0.01" step="0.01" type="number" placeholder="Kg" className="min-h-10 rounded-lg border border-slate-300 px-3 text-sm" />
               <button disabled={saving} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-[#526b4c] px-4 text-sm font-semibold text-white disabled:opacity-60 sm:col-span-2">
                 <Plus className="h-4 w-4" /> Adicionar produção
