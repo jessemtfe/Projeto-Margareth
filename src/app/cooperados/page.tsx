@@ -26,6 +26,7 @@ export default function CooperadosPage() {
     kg: "",
     situacao: "Ativo",
   });
+  const [isCooperado, setIsCooperado] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -39,6 +40,7 @@ export default function CooperadosPage() {
       })
       .then((account) => {
         if (active && account?.profile === "COOPERADO") {
+          setIsCooperado(true);
           router.replace("/meus-registros");
         }
       })
@@ -79,6 +81,10 @@ export default function CooperadosPage() {
 
     carregarCooperados();
   }, []);
+
+  if (isCooperado) {
+    return null;
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
