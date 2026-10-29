@@ -1,8 +1,10 @@
-# EcoCat — Relatório de testes da Sprint 5
+# EcoCat — Relatório de testes do sistema (Sprints 1–5)
 
 ## Escopo
 
-Verificação automatizada das regras puras para turnos, cálculo do rateio, limites de elegibilidade, arredondamento, sequência de cargas, alerta por rejeito e transições de status. Também foram executados type-check, lint, build, validação do schema Prisma, smoke test de leitura do MySQL/TiDB e verificação HTTP pública. Não foram executados fluxos autenticados E2E.
+Verificação do produto desenvolvido nas Sprints 1–5. A cobertura automatizada disponível inclui as regras puras de turnos, cálculo do rateio, limites de elegibilidade, arredondamento, sequência de cargas, alerta por rejeito e transições de status. Também foram executados type-check, lint, build, validação do schema Prisma, smoke test de leitura do MySQL/TiDB e verificação HTTP pública. Não foram executados fluxos autenticados E2E.
+
+O foco desta execução foi a validação de entrega da Sprint 5; os resultados não devem ser interpretados como aprovação E2E de cada tela e operação das Sprints 1–4.
 
 ## Execuções registradas
 

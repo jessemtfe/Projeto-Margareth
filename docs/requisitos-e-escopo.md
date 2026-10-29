@@ -1,8 +1,60 @@
-# EcoCat — Requisitos e escopo
+# EcoCat — Requisitos e escopo do projeto
 
 ## Objetivo
 
 O EcoCat apoia a operação de uma cooperativa de reciclagem: cadastro de geradores e cooperados, controle de cargas e rejeitos, registro de turnos e produção, e conferência do rateio mensal.
+
+## Escopo organizado por sprint
+
+Esta documentação descreve o produto completo, da Sprint 1 à Sprint 5. A Sprint 5 é a etapa de estabilização e entrega; ela não substitui nem limita a documentação funcional das sprints anteriores.
+
+| Sprint | Foco | Entregas funcionais/documentais |
+|---|---|---|
+| 1 — Cadastros e operação inicial | Base operacional da cooperativa | Cadastro e consulta de geradores, cooperados e preços; entrada e identificação de cargas; autenticação, navegação e controle de acesso por perfil. |
+| 2 — Fluxo de cargas e rejeitos | Acompanhamento e regras da operação | Ciclo sequencial das cargas, rejeição na entrada, validação de dados e pesagem, histórico de rejeito por gerador, alerta após três cargas consecutivas acima de 25%, central de alertas e ações de manutenção dos cadastros. |
+| 3 — Turnos e produção | Registros individuais para cálculo | Entrada e saída de turnos, cálculo de duração, turno aberto, tipo de dia, domingos/feriados em dobro, produção por material e persistência associada ao cooperado. |
+| 4 — Rateio e fechamento | Memória financeira e conferência | Prévia mensal, fundo 50/50, elegibilidade por horas, bônus, produção avaliada por material, inconsistências, histórico e fechamento imutável. |
+| 5 — Estabilização e entrega | Qualidade e apresentação do projeto completo | Testes de regras das Sprints 1–4, correção de problemas, verificação de build/schema/banco, requisitos consolidados, diagramas, relatório, checklist de evidências e roteiro de apresentação. |
+
+### Sprint 1 — Cadastros e operação inicial
+
+- Manter os cadastros de geradores, cooperados e preços dos materiais.
+- Registrar cargas ligadas a um gerador e identificar cada carga individualmente.
+- Disponibilizar autenticação e navegação de acordo com os perfis Presidente, Balanceiro e Cooperado.
+- Garantir que a autorização também seja aplicada pelas APIs do servidor.
+
+### Sprint 2 — Fluxo de cargas, rejeito e alertas
+
+- Permitir acompanhar o ciclo Recebida → Pesada → Em triagem → Triada → Vendida, sem pular ou retroceder etapas.
+- Permitir rejeitar a carga no recebimento e preservar esse registro.
+- Validar gerador, material, data, peso e percentual de rejeito; pesos fora da faixa operacional exigem confirmação.
+- Manter histórico de cargas e calcular a regra de rejeito pelas três cargas mais recentes de cada gerador.
+- Criar alerta somente se as três taxas forem estritamente maiores que 25%; 25% ou menos reinicia a sequência.
+- Permitir consultar alertas persistidos e manter cadastros por telas de criação, edição e remoção autorizadas.
+
+### Sprint 3 — Turnos e produção
+
+- Registrar data, entrada, saída e tipo do dia do turno; calcular duração e impedir saída anterior/igual à entrada.
+- Identificar domingo pela data; marcar feriados manualmente; ponderar em dobro ambos na parcela de horas.
+- Não usar turnos abertos no cálculo.
+- Registrar produção positiva em kg por cooperado, material e data, persistindo os dados no banco.
+- Preparar os dados e limites de elegibilidade usados pelo rateio: 60 horas reais para a parcela de produção.
+
+### Sprint 4 — Rateio, memória e fechamento
+
+- Avaliar a produção mensal aos preços ativos do material e competência.
+- Dividir o fundo avaliado em 50% para horas ponderadas e 50% para produção de cooperados elegíveis.
+- Considerar menos de 60 horas como inelegível à parcela de produção e exatamente 60 como elegível.
+- Aplicar bônus adicional de 10% da parcela individual de produção somente acima de 180 horas reais.
+- Exibir memória individual, valores por material, totais, inconsistências e histórico.
+- Bloquear fechamento enquanto houver turno aberto ou inconsistência; preservar o resultado e impedir alterações posteriores da competência fechada.
+
+### Sprint 5 — Estabilização e entrega acadêmica
+
+- Reexecutar testes automatizados e validações técnicas sobre regras de todas as sprints.
+- Conferir conectividade ao banco e estado do ambiente publicado sem alterar a base operacional durante verificações de leitura.
+- Consolidar requisitos, UML/modelo de dados, relatório de testes, checklist de evidências e roteiro de apresentação.
+- Registrar explicitamente o que foi automatizado, o que foi verificado no ambiente público e os cenários E2E que ainda exigem ambiente de demonstração.
 
 ## Perfis e permissões
 
@@ -51,6 +103,6 @@ O servidor valida permissões nas APIs; a navegação da interface não é a ún
 6. Feriados locais e móveis precisam ser marcados no registro do turno.
 7. Uma inconsistência de preço ou turno precisa ser corrigida antes de fechar; não se presume preço zero.
 
-## Fora do escopo de Sprint 5
+## Fora do escopo da Sprint 5
 
-Sprint 5 é de estabilização e entrega. Não inclui novos módulos de operação, integração financeira/pagamento, calendário automático de feriados ou edição/reabertura de rateio fechado.
+A Sprint 5 é de estabilização e entrega do sistema descrito nas Sprints 1–4. Não inclui novos módulos de operação, integração financeira/pagamento, calendário automático de feriados ou edição/reabertura de rateio fechado.

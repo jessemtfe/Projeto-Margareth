@@ -1,4 +1,4 @@
-# EcoCat — Roteiro de apresentação
+# EcoCat — Roteiro de apresentação do projeto completo
 
 ## Preparação
 
@@ -13,15 +13,14 @@
 
 ## Sequência sugerida (7–10 minutos)
 
-1. **Contexto e objetivo (1 min):** explicar que o EcoCat acompanha materiais, cargas, turnos e rateio da cooperativa.
-2. **Perfis e cadastros (1 min):** mostrar a navegação conforme o perfil e localizar geradores/cooperados.
-3. **Preço e entrada de carga (1–2 min):** mostrar um preço ativo e avançar uma carga uma etapa; explicar que não é possível pular etapas.
-4. **Regra de rejeito (1 min):** abrir o alerta do gerador com três cargas consecutivas acima de 25%; explicar que 25% exatos não contam.
-5. **Registros do cooperado (1 min):** mostrar turno aberto/encerrado, horas e produção por material.
-6. **Prévia do rateio (2 min):** selecionar competência e percorrer produção avaliada, horas reais/ponderadas, parcela de horas, parcela de produção e bônus.
-7. **Validação e fechamento (1 min):** demonstrar bloqueio por inconsistência em competência de teste; em seguida apresentar fechamento já preparado em competência descartável ou no ambiente de demonstração.
-8. **Memória e persistência (1 min):** abrir a memória individual e recarregar para mostrar dados persistidos.
-9. **Encerramento:** resumir regras, cuidados com dados e próximos passos.
+1. **Contexto do projeto (1 min):** objetivo, problema atendido e visão das cinco sprints.
+2. **Sprint 1 — Base operacional (1 min):** apresentar perfis e cadastros de geradores, cooperados e preços.
+3. **Sprint 2 — Cargas e alertas (2 min):** registrar/acompanhar carga, mostrar transição de status e alerta de três rejeitos acima de 25%.
+4. **Sprint 3 — Registros do cooperado (1 min):** mostrar entrada/saída de turno, domingo/feriado e produção por material.
+5. **Sprint 4 — Rateio mensal (2–3 min):** selecionar competência e percorrer produção avaliada, horas reais/ponderadas, parcela de horas, parcela de produção e bônus.
+6. **Sprint 4 — Fechamento e memória (1 min):** demonstrar bloqueio por inconsistência em ambiente de teste, memória fechada preparada e persistência após atualizar.
+7. **Sprint 5 — Qualidade e entrega (1 min):** apresentar testes automatizados, documentação e limites dos testes E2E.
+8. **Encerramento:** resumir regras de negócio, arquitetura e cuidados com dados.
 
 ## Falas-chave para o rateio
 

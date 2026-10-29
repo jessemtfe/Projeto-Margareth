@@ -59,14 +59,14 @@ O smoke test opcional `npm run test:db-smoke` só faz consultas de leitura e imp
 
 ## Documentação da entrega
 
-- [Requisitos e escopo](./docs/requisitos-e-escopo.md)
+- A documentação funcional cobre **todas as Sprints 1–5**: [requisitos, escopo e entregas por sprint](./docs/requisitos-e-escopo.md).
 - [Diagrama de casos de uso](./docs/diagrama-casos-de-uso.mmd)
 - [Modelo de dados](./docs/modelo-dados.mmd)
-- [Relatório de testes](./docs/relatorio-testes.md)
+- [Relatório de testes do sistema](./docs/relatorio-testes.md)
 - [Checklist de evidências](./docs/evidencias.md)
 - [Roteiro da apresentação](./docs/roteiro-apresentacao.md)
 
-Para registrar evidências E2E, preparar primeiro um ambiente de demonstração e contas fictícias. Não adicionar credenciais nem capturas contendo dados pessoais ao repositório.
+Os diagramas, relatório, evidências e roteiro referem-se ao produto completo, não somente à Sprint 5. Para registrar evidências E2E, preparar primeiro um ambiente de demonstração e contas fictícias. Não adicionar credenciais nem capturas contendo dados pessoais ao repositório.
 
 ## Banco e deploy
 
