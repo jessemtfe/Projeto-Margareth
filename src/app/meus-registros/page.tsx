@@ -295,15 +295,30 @@ export default function MeusRegistrosPage() {
             </button>
             <div className="mt-5 space-y-2">
               {turnos.slice(0, 5).map((turno) => (
-                <div key={turno.id} className="flex flex-col gap-1 rounded-lg bg-slate-50 px-3 py-2 text-sm sm:flex-row sm:items-center sm:justify-between">
-                  <span>
-                    Entrada: {formatDate(turno.inicio)}
-                    {turno.saida ? ` · Saída: ${formatDate(turno.saida)}` : ""}
-                  </span>
-                  <span className={turno.status === "ABERTO" ? "font-semibold text-amber-700" : "text-slate-500"}>
+                <div key={turno.id} className="grid gap-2 rounded-lg bg-slate-50 px-3 py-3 text-sm sm:grid-cols-[1fr_auto] sm:items-center">
+                  <div className="grid gap-1 sm:grid-cols-2 sm:gap-4">
+                    <span><span className="font-medium text-slate-700">Entrada:</span> {formatDate(turno.inicio)}</span>
+                    <span>
+                      <span className="font-medium text-slate-700">Saída:</span>{" "}
+                      {turno.saida
+                        ? formatDate(turno.saida)
+                        : turno.status === "ABERTO"
+                          ? "Aguardando encerramento"
+                          : "Não registrada"}
+                    </span>
+                  </div>
+                  <span
+                    className={
+                      turno.status === "ABERTO" || !turno.saida
+                        ? "font-semibold text-amber-700"
+                        : "text-slate-500"
+                    }
+                  >
                     {turno.status === "ABERTO"
-                      ? "Aberto"
-                      : `${turno.horasTrabalhadas?.toFixed(2) ?? "0.00"} h · ${dayTypeLabel(turno.tipoDia)}`}
+                      ? "Em andamento"
+                      : turno.saida
+                        ? `${turno.horasTrabalhadas?.toFixed(2) ?? "0.00"} h · ${dayTypeLabel(turno.tipoDia)}`
+                        : "Fechado sem horário de saída"}
                   </span>
                 </div>
               ))}
