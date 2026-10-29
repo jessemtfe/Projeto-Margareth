@@ -403,7 +403,7 @@ export default function MeusRegistrosPage() {
                 </label>
               </div>
               ) : (
-                <p className="mt-5 text-sm text-slate-500">O Balanceiro registra e encerra os turnos.</p>
+                null
               )
             ) : (
               profile === "BALANCEIRO" ? (
