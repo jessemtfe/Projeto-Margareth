@@ -48,8 +48,8 @@ export default async function RelatoriosPage() {
   const reports = [
     { title: "Cooperados ativos", value: String(cooperados), icon: UsersRound, href: "/cooperados" },
     { title: "Cargas registradas", value: String(cargas), icon: Truck, href: "/cargas" },
-    { title: "Produção no mês", value: `${productionKg.toLocaleString("pt-BR", { maximumFractionDigits: 2 })} kg`, icon: Boxes, href: "/meus-registros#producao" },
-    { title: "Turnos encerrados no mês", value: String(turnos._count._all), icon: Clock3, href: "/meus-registros#turnos" },
+    { title: "Produção no mês", value: `${productionKg.toLocaleString("pt-BR", { maximumFractionDigits: 2 })} kg`, icon: Boxes, href: "/registro-cooperados#producao" },
+    { title: "Turnos encerrados no mês", value: String(turnos._count._all), icon: Clock3, href: "/registro-cooperados#turnos" },
     { title: "Situação do rateio", value: rateio, icon: Calculator, href: "/rateio" },
   ];
 

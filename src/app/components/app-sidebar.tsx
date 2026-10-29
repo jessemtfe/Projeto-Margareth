@@ -77,7 +77,7 @@ export default function AppSidebar() {
         ? [
             { href: "/cargas", label: "Cargas", icon: Truck },
             { href: "/geradores", label: "Geradores", icon: Factory },
-            { href: "/meus-registros", label: "Registros dos cooperados", icon: UsersRound },
+            { href: "/registro-cooperados", label: "Registros dos cooperados", icon: UsersRound },
           ]
         : account?.profile === "PRESIDENTE"
           ? [
@@ -86,7 +86,7 @@ export default function AppSidebar() {
               { href: "/cooperados", label: "Cooperados", icon: UsersRound },
               { href: "/precos", label: "Tabela de Preços", icon: Tags },
               { href: "/cargas", label: "Cargas", icon: Truck },
-              { href: "/meus-registros", label: "Registros dos cooperados", icon: Boxes },
+              { href: "/registro-cooperados", label: "Registros dos cooperados", icon: Boxes },
               { href: "/rateio", label: "Rateio", icon: Calculator },
               { href: "/relatorios", label: "Relatórios", icon: FileBarChart },
               { href: "/usuarios", label: "Gerenciar acessos", icon: ShieldCheck },

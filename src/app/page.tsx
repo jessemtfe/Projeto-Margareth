@@ -206,7 +206,7 @@ export default async function HomePage() {
             <h2 className="mb-4 text-lg font-semibold text-[#1e2b20]">Atalhos operacionais</h2>
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               <Shortcut href="/cargas" title="Registrar cargas" description="Registre recebimento, peso e rejeito." icon={Truck} />
-              <Shortcut href="/meus-registros" title="Registros dos cooperados" description="Registre turnos e produção dos cooperados na mesma tela." icon={UsersRound} />
+              <Shortcut href="/registro-cooperados" title="Registros dos cooperados" description="Registre turnos e produção dos cooperados na mesma tela." icon={UsersRound} />
             </div>
           </section>
         </div>
@@ -253,7 +253,7 @@ export default async function HomePage() {
             <Shortcut href="/cooperados" title="Cooperados" description="Gerencie os cadastros e consulte os totais mensais." icon={UsersRound} />
             <Shortcut href="/precos" title="Tabela de preços" description="Gerencie os preços dos materiais por competência." icon={Tags} />
             <Shortcut href="/cargas" title="Cargas" description="Acompanhe as cargas e suas etapas." icon={Truck} />
-            <Shortcut href="/meus-registros" title="Registros dos cooperados" description="Consulte turnos, horas e produção dos cooperados em uma única tela." icon={Boxes} />
+            <Shortcut href="/registro-cooperados" title="Registros dos cooperados" description="Consulte turnos, horas e produção dos cooperados em uma única tela." icon={Boxes} />
             <Shortcut href="/rateio" title="Rateio mensal" description="Confira a prévia e feche o período." icon={Calculator} />
             <Shortcut href="/relatorios" title="Relatórios" description="Consulte indicadores e resumos mensais." icon={FileBarChart} />
             <Shortcut href="/alertas" title="Alertas de rejeito" description="Acompanhe ocorrências ativas dos geradores." icon={Bell} />
