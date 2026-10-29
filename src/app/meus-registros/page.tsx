@@ -51,6 +51,13 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
+function formatProductionDate(value: string) {
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeZone: "UTC",
+  }).format(new Date(value));
+}
+
 function currentSaoPauloDateTime() {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Sao_Paulo",
@@ -315,10 +322,10 @@ export default function MeusRegistrosPage() {
                     }
                   >
                     {turno.status === "ABERTO"
-                      ? "Em andamento"
+                      ? `Em andamento · ${dayTypeLabel(turno.tipoDia)}`
                       : turno.saida
                         ? `${turno.horasTrabalhadas?.toFixed(2) ?? "0.00"} h · ${dayTypeLabel(turno.tipoDia)}`
-                        : "Fechado sem horário de saída"}
+                        : `Fechado sem horário de saída · ${dayTypeLabel(turno.tipoDia)}`}
                   </span>
                 </div>
               ))}
@@ -350,8 +357,12 @@ export default function MeusRegistrosPage() {
             </form>
             <div className="mt-5 space-y-2">
               {producoes.slice(0, 5).map((item) => (
-                <div key={item.id} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-sm">
-                  <span>{item.material}</span><span className="font-semibold">{item.kg.toFixed(2)} kg</span>
+                <div key={item.id} className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2 text-sm">
+                  <div>
+                    <span>{item.material}</span>
+                    <span className="mt-1 block text-xs text-slate-500">Data: {formatProductionDate(item.data)}</span>
+                  </div>
+                  <span className="shrink-0 font-semibold">{item.kg.toFixed(2)} kg</span>
                 </div>
               ))}
             </div>
