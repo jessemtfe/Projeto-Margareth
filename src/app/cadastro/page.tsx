@@ -9,7 +9,6 @@ import AuthBackground from "../components/auth-background";
 type ApiResponse = {
   error?: string;
   message?: string;
-  destination?: string;
 };
 
 export default function CadastroPage() {
@@ -17,9 +16,6 @@ export default function CadastroPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [code, setCode] = useState("");
-  const [confirmationSent, setConfirmationSent] = useState(false);
-  const [destination, setDestination] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -39,32 +35,7 @@ export default function CadastroPage() {
         setError(result.error ?? "Não foi possível iniciar o cadastro.");
         return;
       }
-      setDestination(result.destination ?? email);
-      setConfirmationSent(true);
-    } catch {
-      setError("Não foi possível conectar. Verifique sua conexão e tente novamente.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
-
-  async function handleConfirm(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError("");
-    setIsSubmitting(true);
-
-    try {
-      const response = await fetch("/api/auth/confirm", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code }),
-      });
-      const result = (await response.json()) as ApiResponse;
-      if (!response.ok) {
-        setError(result.error ?? "Não foi possível confirmar seu e-mail.");
-        return;
-      }
-      router.replace("/login?confirmed=1");
+      router.replace("/login?registered=1");
       router.refresh();
     } catch {
       setError("Não foi possível conectar. Verifique sua conexão e tente novamente.");
@@ -87,8 +58,7 @@ export default function CadastroPage() {
             </div>
           </div>
 
-          {!confirmationSent ? (
-            <>
+          <>
               <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#b7d89b]">
                 Primeiro acesso
               </p>
@@ -143,7 +113,7 @@ export default function CadastroPage() {
                   />
                 </label>
                 <p className="text-xs leading-5 text-white/55">
-                  A senha deve ter uma letra maiúscula, uma minúscula e um número. Depois da confirmação, a pessoa administradora deverá liberar sua conta e definir seu perfil de acesso.
+                  A senha deve ter uma letra maiúscula, uma minúscula e um número. Depois do cadastro, a pessoa administradora deverá liberar sua conta e definir seu perfil de acesso.
                 </p>
                 {error && (
                   <p role="alert" className="rounded-xl bg-rose-950/50 px-4 py-3 text-sm text-rose-100">
@@ -158,49 +128,7 @@ export default function CadastroPage() {
                   {isSubmitting ? "Enviando..." : "Criar conta"}
                 </button>
               </form>
-            </>
-          ) : (
-            <>
-              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#b7d89b]">
-                Confirmação de e-mail
-              </p>
-              <h1 className="mt-2 text-3xl font-bold tracking-tight">Confira sua caixa de entrada</h1>
-              <p className="mt-2 text-sm leading-6 text-white/70">
-                Enviamos um código de seis dígitos para <span className="font-semibold text-white">{destination}</span>.
-              </p>
-              <form className="mt-6 space-y-4" onSubmit={handleConfirm}>
-                <label className="block text-sm font-medium" htmlFor="code">
-                  Código de confirmação
-                  <input
-                    id="code"
-                    name="code"
-                    type="text"
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    pattern="[0-9]{6}"
-                    maxLength={6}
-                    required
-                    value={code}
-                    onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
-                    className="mt-2 min-h-12 w-full rounded-xl border border-white/20 bg-white px-4 text-center text-lg tracking-[0.4em] text-slate-900 outline-none transition focus:border-[#b7d89b] focus:ring-2 focus:ring-[#b7d89b]/40"
-                    placeholder="000000"
-                  />
-                </label>
-                {error && (
-                  <p role="alert" className="rounded-xl bg-rose-950/50 px-4 py-3 text-sm text-rose-100">
-                    {error}
-                  </p>
-                )}
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="min-h-12 w-full rounded-xl bg-[#c3e5a7] px-4 text-sm font-bold text-[#153a29] transition hover:bg-[#d4efbd] disabled:cursor-wait disabled:opacity-70"
-                >
-                  {isSubmitting ? "Confirmando..." : "Confirmar e-mail"}
-                </button>
-              </form>
-            </>
-          )}
+          </>
 
           <p className="mt-6 text-center text-sm text-white/70">
             Já tem conta?{" "}

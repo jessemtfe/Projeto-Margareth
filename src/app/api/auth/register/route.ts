@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
-import { CognitoError, signUpWithCognito } from "../../../../../lib/cognito";
+import { randomUUID } from "node:crypto";
 import { readJsonObject } from "../../../../../lib/auth";
+import { hashPassword } from "../../../../../lib/password";
+import prisma from "../../../../../lib/prisma";
 
 export const dynamic = "force-dynamic";
 
@@ -29,53 +31,42 @@ export async function POST(request: Request) {
     );
   }
 
-  try {
-    const result = await signUpWithCognito(email, password, name);
-    const deliveryDetails = result.CodeDeliveryDetails;
-    const destination =
-      deliveryDetails !== null &&
-      typeof deliveryDetails === "object" &&
-      "Destination" in deliveryDetails &&
-      typeof deliveryDetails.Destination === "string"
-        ? deliveryDetails.Destination
-        : email;
-
+  if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/\d/.test(password)) {
     return NextResponse.json(
-      {
-        message: "Enviamos um código de confirmação para o seu e-mail.",
-        destination,
-      },
-      { status: 201 },
+      { error: "A senha precisa ter uma letra maiúscula, uma minúscula e um número." },
+      { status: 400 },
     );
-  } catch (error) {
-    if (!(error instanceof CognitoError)) {
-      throw error;
-    }
-
-    if (error.code === "UsernameExistsException") {
-      return NextResponse.json(
-        { error: "Não foi possível iniciar o cadastro. Tente entrar ou confira o e-mail." },
-        { status: 409 },
-      );
-    }
-
-    if (error.code === "InvalidPasswordException") {
-      return NextResponse.json(
-        {
-          error:
-            "A senha precisa ter pelo menos 8 caracteres, uma letra maiúscula, uma minúscula e um número.",
-        },
-        { status: 400 },
-      );
-    }
-
-    if (error.code === "TooManyRequestsException" || error.code === "LimitExceededException") {
-      return NextResponse.json(
-        { error: "Muitas tentativas. Aguarde um pouco e tente novamente." },
-        { status: 429 },
-      );
-    }
-
-    throw error;
   }
+
+  const existingAccount = await prisma.userAccount.findUnique({ where: { email } });
+  if (existingAccount) {
+    return NextResponse.json(
+      { error: "Não foi possível iniciar o cadastro. Tente entrar ou confira o e-mail." },
+      { status: 409 },
+    );
+  }
+
+  const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const isAdministrator = Boolean(adminEmail && email === adminEmail);
+  await prisma.userAccount.create({
+    data: {
+      cognitoSub: randomUUID(),
+      email,
+      name,
+      passwordHash: await hashPassword(password),
+      role: isAdministrator ? "ADMIN" : "VIEWER",
+      profile: isAdministrator ? "PRESIDENTE" : "COOPERADO",
+      active: isAdministrator,
+    },
+  });
+
+  return NextResponse.json(
+    {
+      message: isAdministrator
+        ? "Conta administradora criada. Você já pode entrar."
+        : "Cadastro concluído. Aguarde a liberação da pessoa administradora.",
+      destination: email,
+    },
+    { status: 201 },
+  );
 }

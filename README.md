@@ -36,7 +36,7 @@ A pesagem é informada em quilogramas. Valores abaixo de 1 kg ou acima de 10.000
 
 ## Autenticação e permissões
 
-O site exige uma sessão autenticada para acessar páginas e APIs. O cadastro confirma o e-mail pelo Amazon Cognito. Contas novas começam como **Cooperado** e precisam ser vinculadas ao cadastro correspondente em **Gerenciar acessos**. A conta associada ao e-mail administrador configurado recebe o perfil **Presidente**.
+O site exige uma sessão autenticada para acessar páginas e APIs. O cadastro usa senha criptografada com `scrypt` e não depende de um provedor externo de identidade. Contas novas começam bloqueadas, como **Cooperado**, e precisam ser liberadas e vinculadas ao cadastro correspondente em **Gerenciar acessos**. A conta associada ao e-mail administrador configurado recebe o perfil **Presidente**.
 
 Os perfis são aplicados no servidor, além da navegação:
 
@@ -46,9 +46,9 @@ Os perfis são aplicados no servidor, além da navegação:
 
 Turnos, produção por material, períodos de rateio e memórias de cálculo são persistidos no banco. O fechamento mensal é recusado se houver turno aberto; depois de fechado, o período e os preços associados não podem ser alterados. O endpoint de fechamento usa os preços ativos por material para a parcela de produção; a parcela por horas permanece explicitamente registrada como zero até a fórmula financeira oficial do rateio ser definida.
 
-Configure `COGNITO_REGION`, `COGNITO_CLIENT_ID`, `ADMIN_EMAIL` e `PUBLIC_APP_URL` no ambiente do servidor, além de `DATABASE_URL`. As tabelas `user_accounts` e `auth_sessions` são criadas no banco por `npx prisma db push`. Cookies de sessão são HttpOnly e Secure em produção; o acesso público de produção deve usar HTTPS.
+Configure `ADMIN_EMAIL` e `PUBLIC_APP_URL` no ambiente da Vercel, além de `DATABASE_URL` do TiDB Cloud. As tabelas `user_accounts` e `auth_sessions` são criadas no banco por `npx prisma db push`. Cookies de sessão são HttpOnly e Secure em produção; o acesso público de produção deve usar HTTPS.
 
-Para publicar alterações do schema no ambiente ECS, construa o estágio `migrator`, execute `prisma db push` dentro da VPC e, quando aplicável, rode o script de backfill antes de atualizar o serviço web. O `db push` desta versão cria as tabelas `turnos`, `producoes`, `rateio_periodos` e `memorias_rateio` e adiciona o perfil funcional e o vínculo opcional de cooperado em `user_accounts`.
+Para publicar alterações do schema na Vercel, execute `npx prisma db push` localmente depois de configurar a conexão TiDB e configure as variáveis de ambiente do projeto. O `db push` desta versão cria as tabelas `turnos`, `producoes`, `rateio_periodos` e `memorias_rateio` e adiciona o perfil funcional, a senha criptografada e o vínculo opcional de cooperado em `user_accounts`.
 
 ## Learn More
 

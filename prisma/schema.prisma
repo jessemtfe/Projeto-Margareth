@@ -35,6 +35,7 @@ model UserAccount {
   cognitoSub String        @unique @map("cognito_sub") @db.VarChar(64)
   email      String        @unique @db.VarChar(255)
   name       String        @db.VarChar(100)
+  passwordHash String      @map("password_hash") @db.VarChar(255)
   role       UserRole      @default(VIEWER)
   profile    UserProfile   @default(COOPERADO)
   cooperadoId Int?         @unique @map("cooperado_id")
