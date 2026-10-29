@@ -268,8 +268,11 @@ export default function MeusRegistrosPage() {
       turno.status === "ABERTO" &&
       (profile !== "BALANCEIRO" || String(turno.cooperadoId) === selectedCooperadoId),
   );
-  const totalKg = producoes.reduce((total, item) => total + item.kg, 0);
   const currentMonth = currentSaoPauloDateTime().date.slice(0, 7);
+  const monthKg = producoes
+    .filter((item) => item.data.slice(0, 7) === currentMonth)
+    .reduce((total, item) => total + item.kg, 0);
+  const openShiftCount = turnos.filter((turno) => turno.status === "ABERTO").length;
   const currentMonthTurnos = turnos.filter((turno) =>
     dateInSaoPaulo(turno.inicio).startsWith(currentMonth),
   );
@@ -315,14 +318,24 @@ export default function MeusRegistrosPage() {
         <section className="grid gap-4 md:grid-cols-3">
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <Clock3 className="h-5 w-5 text-sky-700" />
-            <p className="mt-4 text-sm text-slate-500">Turno atual</p>
-            <p className="mt-1 text-xl font-bold text-slate-900">{openShift ? "Em andamento" : "Encerrado"}</p>
+            <p className="mt-4 text-sm text-slate-500">
+              {profile === "PRESIDENTE" ? "Turnos abertos" : "Turno atual"}
+            </p>
+            <p className="mt-1 text-xl font-bold text-slate-900">
+              {profile === "PRESIDENTE"
+                ? String(openShiftCount)
+                : openShift
+                  ? "Em andamento"
+                  : "Encerrado"}
+            </p>
           </div>
           {profile !== "BALANCEIRO" && (
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <Scale className="h-5 w-5 text-[#526b4c]" />
-              <p className="mt-4 text-sm text-slate-500">Produção registrada</p>
-              <p className="mt-1 text-xl font-bold text-slate-900">{totalKg.toFixed(2)} kg</p>
+              <p className="mt-4 text-sm text-slate-500">
+                {profile === "PRESIDENTE" ? "Produção no mês" : "Produção registrada"}
+              </p>
+              <p className="mt-1 text-xl font-bold text-slate-900">{monthKg.toFixed(2)} kg</p>
             </div>
           )}
           {profile !== "BALANCEIRO" && (
