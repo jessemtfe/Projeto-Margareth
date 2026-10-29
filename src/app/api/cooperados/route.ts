@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 
 import { getCurrentUser, hasProfile } from "../../../../lib/auth";
 import prisma from "../../../../lib/prisma";
+import {
+  completedShiftHours,
+  saoPauloDate,
+  saoPauloMonthRange,
+  weekdayForDate,
+} from "../../../../lib/turno-rules";
 
 export const dynamic = "force-dynamic";
 
@@ -39,15 +45,88 @@ export async function GET() {
     })));
   }
 
-  const cooperados = await prisma.cadastroCooperados.findMany({
-    where:
-      user.profile === "COOPERADO"
-        ? { idCooperado: user.cooperadoId ?? -1 }
-        : { OR: [{ origem: "MANUAL" }, { conta: { isNot: null } }] },
-    orderBy: { idCooperado: "desc" },
-  });
+  const monthParts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+  }).formatToParts(new Date());
+  const year = Number(monthParts.find((part) => part.type === "year")?.value);
+  const month = Number(monthParts.find((part) => part.type === "month")?.value);
+  const { start, end } = saoPauloMonthRange(year, month);
+  const productionStart = new Date(Date.UTC(year, month - 1, 1));
+  const productionEnd = new Date(Date.UTC(year, month, 1));
 
-  return NextResponse.json(cooperados.map(formatCooperado));
+  const [cooperados, turnos, producoes] = await Promise.all([
+    prisma.cadastroCooperados.findMany({
+      where:
+        user.profile === "COOPERADO"
+          ? { idCooperado: user.cooperadoId ?? -1 }
+          : { OR: [{ origem: "MANUAL" }, { conta: { isNot: null } }] },
+      orderBy: { idCooperado: "desc" },
+    }),
+    prisma.turno.findMany({
+      where: {
+        status: "FECHADO",
+        inicio: { gte: start, lt: end },
+        ...(user.profile === "COOPERADO"
+          ? { cooperadoId: user.cooperadoId ?? -1 }
+          : {}),
+      },
+      select: {
+        cooperadoId: true,
+        inicio: true,
+        saida: true,
+        tipoDia: true,
+      },
+    }),
+    prisma.producao.findMany({
+      where: {
+        data: { gte: productionStart, lt: productionEnd },
+        ...(user.profile === "COOPERADO"
+          ? { cooperadoId: user.cooperadoId ?? -1 }
+          : {}),
+      },
+      select: { cooperadoId: true, kg: true },
+    }),
+  ]);
+
+  const totalsByCooperado = new Map<
+    number,
+    { horas: number; domingo: number; kg: number }
+  >();
+  for (const cooperado of cooperados) {
+    totalsByCooperado.set(cooperado.idCooperado, {
+      horas: 0,
+      domingo: 0,
+      kg: 0,
+    });
+  }
+  for (const turno of turnos) {
+    const hours = completedShiftHours(turno.inicio, turno.saida);
+    if (hours === null) continue;
+    const totals = totalsByCooperado.get(turno.cooperadoId);
+    if (!totals) continue;
+    totals.horas += hours;
+    if (
+      turno.tipoDia === "DOMINGO" ||
+      weekdayForDate(saoPauloDate(turno.inicio)) === 0
+    ) {
+      totals.domingo += hours;
+    }
+  }
+  for (const producao of producoes) {
+    const totals = totalsByCooperado.get(producao.cooperadoId);
+    if (totals) totals.kg += Number(producao.kg);
+  }
+
+  return NextResponse.json(cooperados.map((item) => ({
+    ...formatCooperado(item),
+    ...(totalsByCooperado.get(item.idCooperado) ?? {
+      horas: 0,
+      domingo: 0,
+      kg: 0,
+    }),
+  })));
 }
 
 export async function POST(request: Request) {
@@ -61,21 +140,18 @@ export async function POST(request: Request) {
 
   const body = await request.json();
   const nome = String(body.nome ?? "").trim();
-  const horas = Number(body.horas ?? 0);
-  const domingo = Number(body.domingo ?? 0);
-  const kgTriados = Number(body.kg ?? 0);
   const situacao = String(body.situacao ?? "Ativo").trim();
 
-  if (!nome || Number.isNaN(horas) || Number.isNaN(domingo) || Number.isNaN(kgTriados)) {
+  if (!nome) {
     return NextResponse.json({ error: "Dados inválidos" }, { status: 400 });
   }
 
   const cooperado = await prisma.cadastroCooperados.create({
     data: {
       nome,
-      horas,
-      domingo,
-      kgTriados,
+      horas: 0,
+      domingo: 0,
+      kgTriados: 0,
       situacao: situacao || "Ativo",
       origem: "MANUAL",
     },
@@ -92,16 +168,13 @@ export async function PATCH(request: Request) {
   const body = await request.json();
   const id = Number(body.id);
   const nome = String(body.nome ?? "").trim();
-  const horas = Number(body.horas);
-  const domingo = Number(body.domingo);
-  const kgTriados = Number(body.kg);
   const situacao = String(body.situacao ?? "").trim();
-  if (!Number.isSafeInteger(id) || id <= 0 || !nome || ![horas, domingo, kgTriados].every(Number.isFinite) || !situacao) {
+  if (!Number.isSafeInteger(id) || id <= 0 || !nome || !situacao) {
     return NextResponse.json({ error: "Dados inválidos." }, { status: 400 });
   }
   const cooperado = await prisma.cadastroCooperados.update({
     where: { idCooperado: id },
-    data: { nome, horas, domingo, kgTriados, situacao },
+    data: { nome, situacao },
   });
   return NextResponse.json(formatCooperado(cooperado));
 }

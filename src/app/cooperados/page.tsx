@@ -19,9 +19,6 @@ export default function CooperadosPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     nome: "",
-    horas: "",
-    domingo: "",
-    kg: "",
     situacao: "Ativo",
   });
   async function removeCooperado(id?: number) {
@@ -31,7 +28,7 @@ export default function CooperadosPage() {
   }
   function editCooperado(item: Cooperado) {
     setEditingId(item.id ?? null);
-    setFormData({ nome: item.nome, horas: String(item.horas), domingo: String(item.domingo), kg: String(item.kg), situacao: item.situacao });
+    setFormData({ nome: item.nome, situacao: item.situacao });
     setIsOpen(true);
   }
   useEffect(() => {
@@ -67,11 +64,8 @@ export default function CooperadosPage() {
     event.preventDefault();
 
     const nome = formData.nome.trim();
-    const horas = Number(formData.horas);
-    const domingo = Number(formData.domingo);
-    const kg = Number(formData.kg);
 
-    if (!nome || Number.isNaN(horas) || Number.isNaN(domingo) || Number.isNaN(kg)) {
+    if (!nome) {
       return;
     }
 
@@ -82,9 +76,6 @@ export default function CooperadosPage() {
         body: JSON.stringify({
           ...(editingId ? { id: editingId } : {}),
           nome,
-          horas,
-          domingo,
-          kg,
           situacao: formData.situacao,
         }),
       });
@@ -94,8 +85,21 @@ export default function CooperadosPage() {
       }
 
       const novoCooperado = (await response.json()) as Cooperado;
-      setCooperados((atual) => editingId ? atual.map((item) => item.id === editingId ? novoCooperado : item) : [novoCooperado, ...atual]);
-      setFormData({ nome: "", horas: "", domingo: "", kg: "", situacao: "Ativo" });
+      setCooperados((atual) =>
+        editingId
+          ? atual.map((item) =>
+              item.id === editingId
+                ? {
+                    ...novoCooperado,
+                    horas: item.horas,
+                    domingo: item.domingo,
+                    kg: item.kg,
+                  }
+                : item,
+            )
+          : [novoCooperado, ...atual],
+      );
+      setFormData({ nome: "", situacao: "Ativo" });
       setEditingId(null);
       setIsOpen(false);
     } catch (error) {
@@ -155,7 +159,7 @@ export default function CooperadosPage() {
                 <tr>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Nome</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Horas</th>
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Domingo</th>
+                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Horas domingo</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Kg triados</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Situação</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Ações</th>
@@ -184,9 +188,9 @@ export default function CooperadosPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-4 text-sm text-slate-700">{cooperado.horas}</td>
-                      <td className="px-4 py-4 text-sm text-slate-700">{cooperado.domingo}</td>
-                      <td className="px-4 py-4 text-sm text-slate-700">{cooperado.kg}</td>
+                      <td className="px-4 py-4 text-sm text-slate-700">{cooperado.horas.toLocaleString("pt-BR")}</td>
+                      <td className="px-4 py-4 text-sm text-slate-700">{cooperado.domingo.toLocaleString("pt-BR")}</td>
+                      <td className="px-4 py-4 text-sm text-slate-700">{cooperado.kg.toLocaleString("pt-BR")}</td>
                       <td className="px-4 py-4">
                         <span
                           className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
@@ -236,40 +240,9 @@ export default function CooperadosPage() {
                 />
               </div>
 
-              <div className="grid gap-4 md:grid-cols-3">
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-700">Horas</label>
-                  <input
-                    type="number"
-                    value={formData.horas}
-                    onChange={(event) => setFormData((current) => ({ ...current, horas: event.target.value }))}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none"
-                    placeholder="160"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-700">Domingo</label>
-                  <input
-                    type="number"
-                    value={formData.domingo}
-                    onChange={(event) => setFormData((current) => ({ ...current, domingo: event.target.value }))}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none"
-                    placeholder="0"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-700">Kg</label>
-                  <input
-                    type="number"
-                    value={formData.kg}
-                    onChange={(event) => setFormData((current) => ({ ...current, kg: event.target.value }))}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none"
-                    placeholder="2000"
-                  />
-                </div>
-              </div>
+              <p className="text-sm text-slate-500">
+                Horas e produção são atualizadas automaticamente pelos registros do mês.
+              </p>
 
               <div>
                 <label className="mb-1 block text-sm font-medium text-slate-700">Situação</label>
