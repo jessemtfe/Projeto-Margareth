@@ -218,7 +218,7 @@ export default function UsuariosPage() {
                         <select
                           name="profile"
                           defaultValue={user.profile}
-                          disabled={updatingId === user.id || !user.active}
+                          disabled={updatingId === user.id}
                           className="mt-1 min-h-10 w-full rounded-md border border-slate-300 bg-white px-2 text-sm text-slate-800 outline-none focus:border-[#42603c] focus:ring-2 focus:ring-[#42603c]/20 disabled:bg-slate-100"
                         >
                           {Object.entries(profileLabels).map(([value, label]) => (
@@ -232,7 +232,7 @@ export default function UsuariosPage() {
                           name="cooperadoId"
                           aria-label={`Cooperado vinculado a ${user.name}`}
                           defaultValue={user.cooperadoId ?? ""}
-                          disabled={updatingId === user.id || !user.active}
+                          disabled={updatingId === user.id}
                           className="mt-1 min-h-10 w-full rounded-md border border-slate-300 bg-white px-2 text-sm text-slate-800 outline-none focus:border-[#42603c] focus:ring-2 focus:ring-[#42603c]/20 disabled:bg-slate-100"
                         >
                           <option value="">Sem vínculo</option>
@@ -248,7 +248,7 @@ export default function UsuariosPage() {
                         <select
                           name="role"
                           defaultValue={user.role}
-                          disabled={updatingId === user.id || !user.active}
+                          disabled={updatingId === user.id}
                           className="mt-1 min-h-10 w-full rounded-md border border-slate-300 bg-white px-2 text-sm text-slate-800 outline-none focus:border-[#42603c] focus:ring-2 focus:ring-[#42603c]/20 disabled:bg-slate-100"
                         >
                           <option value="VIEWER">Legado: leitura</option>
