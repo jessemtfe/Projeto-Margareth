@@ -506,7 +506,7 @@ export default function MeusRegistrosPage() {
               </button>
             </form>}
             <div className="mt-5 space-y-2">
-              {producoes.slice(0, 5).map((item) => (
+              {producoes.map((item) => (
                 <div key={item.id} className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2 text-sm">
                   <div>
                     {profile === "BALANCEIRO" && <span className="mb-1 block font-semibold">{item.cooperadoNome}</span>}
