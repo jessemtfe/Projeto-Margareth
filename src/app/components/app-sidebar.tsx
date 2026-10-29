@@ -80,8 +80,7 @@ export default function AppSidebar() {
         ? [
             { href: "/cargas", label: "Cargas", icon: Truck },
             { href: "/geradores", label: "Geradores", icon: Factory },
-            { href: "/meus-registros#turnos", label: "Turnos", icon: Clock3 },
-            { href: "/meus-registros#producao", label: "Produção", icon: Boxes },
+            { href: "/meus-registros", label: "Registros dos cooperados", icon: UsersRound },
           ]
         : account?.profile === "PRESIDENTE"
           ? [

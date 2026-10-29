@@ -68,7 +68,7 @@ Esta documentação descreve o produto completo, da Sprint 1 à Sprint 5. A Spri
 O painel inicial e o menu variam conforme o perfil. O servidor valida o acesso direto às páginas e às APIs; ocultar opções de navegação não é a única barreira de acesso.
 
 - Presidente: Dashboard, Geradores, Cooperados, Tabela de Preços, Cargas, Turnos, Produção, Rateio e Relatórios; mantém também o gerenciamento de acessos.
-- Balanceiro: Cargas, Geradores, Turnos e Produção.
+- Balanceiro: Cargas, Geradores e Registros dos cooperados (turnos e produção na mesma tela).
 - Cooperado: Meu Painel, Minhas Horas, Minha Produção e Meu Rateio; os dados são limitados ao cadastro vinculado à conta.
 
 ## Requisitos funcionais

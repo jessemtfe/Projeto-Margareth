@@ -208,8 +208,7 @@ export default async function HomePage() {
             <h2 className="mb-4 text-lg font-semibold text-[#1e2b20]">Atalhos operacionais</h2>
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               <Shortcut href="/cargas" title="Registrar cargas" description="Registre recebimento, peso e rejeito." icon={Truck} />
-              <Shortcut href="/meus-registros#turnos" title="Registrar turnos" description="Registre entrada e saída dos cooperados." icon={Clock3} />
-              <Shortcut href="/meus-registros#producao" title="Registrar produção" description="Informe material e quantidade por cooperado." icon={Boxes} />
+              <Shortcut href="/meus-registros" title="Registros dos cooperados" description="Registre turnos e produção dos cooperados na mesma tela." icon={UsersRound} />
             </div>
           </section>
         </div>
