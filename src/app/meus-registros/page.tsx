@@ -459,7 +459,9 @@ export default function MeusRegistrosPage() {
               {currentMonthTurnos.map((turno) => (
                 <div key={turno.id} className="grid gap-2 rounded-lg bg-slate-50 px-3 py-3 text-sm sm:grid-cols-[1fr_auto] sm:items-center">
                   <div className="grid gap-1 sm:grid-cols-2 sm:gap-4">
-                    {profile === "BALANCEIRO" && <span className="font-semibold">{turno.cooperadoNome}</span>}
+                    {profile !== "COOPERADO" && (
+                      <span className="font-semibold">{turno.cooperadoNome}</span>
+                    )}
                     <span><span className="font-medium text-slate-700">Entrada:</span> {formatDate(turno.inicio)}</span>
                     <span>
                       <span className="font-medium text-slate-700">Saída:</span>{" "}
@@ -538,7 +540,9 @@ export default function MeusRegistrosPage() {
               {producoes.map((item) => (
                 <div key={item.id} className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2 text-sm">
                   <div>
-                    {profile === "BALANCEIRO" && <span className="mb-1 block font-semibold">{item.cooperadoNome}</span>}
+                    {profile !== "COOPERADO" && (
+                      <span className="mb-1 block font-semibold">{item.cooperadoNome}</span>
+                    )}
                     <span>{item.material}</span>
                     <span className="mt-1 block text-xs text-slate-500">Data: {formatProductionDate(item.data)}</span>
                   </div>
