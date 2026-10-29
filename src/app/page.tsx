@@ -170,11 +170,9 @@ export default async function HomePage() {
             <MetricCard label="Valor a receber" value={memoria ? formatMoney(Number(memoria.valorTotal)) : "—"} detail={memoria ? "Rateio fechado" : "Disponível após o fechamento"} icon={WalletCards} tone="bg-violet-100 text-violet-700" />
           </section>
           <section className="mt-8">
-            <h2 className="mb-4 text-lg font-semibold text-[#1e2b20]">Minhas informações</h2>
-            <div className="grid gap-4 md:grid-cols-3">
-              <Shortcut href="/meus-registros#turnos" title="Minhas Horas" description="Consulte seus turnos e horas registradas." icon={Clock3} />
-              <Shortcut href="/meus-registros#producao" title="Minha Produção" description="Consulte seus registros por material." icon={Boxes} />
-              <Shortcut href="/meus-registros#rateio" title="Meu Rateio" description="Veja valores e memórias dos períodos fechados." icon={Calculator} />
+            <h2 className="mb-4 text-lg font-semibold text-[#1e2b20]">Meus registros</h2>
+            <div className="max-w-xl">
+              <Shortcut href="/meus-registros" title="Consultar meus registros" description="Acesse suas horas, produção e memórias de rateio em uma única tela." icon={UsersRound} />
             </div>
           </section>
         </div>

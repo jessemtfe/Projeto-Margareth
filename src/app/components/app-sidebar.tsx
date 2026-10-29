@@ -12,7 +12,6 @@ import {
   LogOut,
   Menu,
   ShieldCheck,
-  Clock3,
   Tags,
   Truck,
   UsersRound,
@@ -72,9 +71,7 @@ export default function AppSidebar() {
     const links = account?.profile === "COOPERADO"
       ? [
           { href: "/", label: "Meu Painel", icon: House },
-          { href: "/meus-registros#turnos", label: "Minhas Horas", icon: Clock3 },
-          { href: "/meus-registros#producao", label: "Minha Produção", icon: Boxes },
-          { href: "/meus-registros#rateio", label: "Meu Rateio", icon: Calculator },
+          { href: "/meus-registros", label: "Meus registros", icon: UsersRound },
         ]
       : account?.profile === "BALANCEIRO"
         ? [

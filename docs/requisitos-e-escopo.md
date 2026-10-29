@@ -69,7 +69,7 @@ O painel inicial e o menu variam conforme o perfil. O servidor valida o acesso d
 
 - Presidente: Dashboard, Geradores, Cooperados, Tabela de Preços, Cargas, Registros dos cooperados (turnos e produção), Rateio e Relatórios; mantém também o gerenciamento de acessos.
 - Balanceiro: Cargas, Geradores e Registros dos cooperados (turnos e produção na mesma tela).
-- Cooperado: Meu Painel, Minhas Horas, Minha Produção e Meu Rateio; os dados são limitados ao cadastro vinculado à conta.
+- Cooperado: Meu Painel e Meus registros, com horas, produção e rateio reunidos em uma tela; os dados são limitados ao cadastro vinculado à conta.
 
 ## Requisitos funcionais
 
