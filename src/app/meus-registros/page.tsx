@@ -125,6 +125,10 @@ export default function MeusRegistrosPage() {
   const [memorias, setMemorias] = useState<Memoria[]>([]);
   const [cooperados, setCooperados] = useState<CooperadoOption[]>([]);
   const [selectedCooperadoId, setSelectedCooperadoId] = useState("");
+  const [recordsCooperadoId, setRecordsCooperadoId] = useState("");
+  const [recordsMonth, setRecordsMonth] = useState(
+    () => currentSaoPauloDateTime().date.slice(0, 7),
+  );
   const [materiais, setMateriais] = useState<string[]>([]);
   const [material, setMaterial] = useState("");
   const [kg, setKg] = useState("");
@@ -152,7 +156,7 @@ export default function MeusRegistrosPage() {
           ? Promise.resolve(null)
           : fetch("/api/rateio", { cache: "no-store" }),
         fetch("/api/precos", { cache: "no-store" }),
-        account.profile === "BALANCEIRO"
+        account.profile !== "COOPERADO"
           ? fetch("/api/cooperados", { cache: "no-store" })
           : Promise.resolve(null),
       ]);
@@ -161,7 +165,7 @@ export default function MeusRegistrosPage() {
         !turnosResponse.ok ||
         !producaoResponse.ok ||
         (memoriaResponse && !memoriaResponse.ok) ||
-        (account.profile === "BALANCEIRO" &&
+        (account.profile !== "COOPERADO" &&
           (!materialsResponse.ok || !cooperadosResponse?.ok))
       ) {
         throw new Error("Não foi possível carregar seus registros.");
@@ -179,13 +183,15 @@ export default function MeusRegistrosPage() {
       }
       if (Array.isArray(cooperadosData)) {
         setCooperados(cooperadosData as CooperadoOption[]);
-        setSelectedCooperadoId((current) =>
-          cooperadosData.some((item: CooperadoOption) => String(item.id) === current)
-            ? current
-            : cooperadosData[0]
-              ? String(cooperadosData[0].id)
-              : "",
-        );
+        if (account.profile === "BALANCEIRO") {
+          setSelectedCooperadoId((current) =>
+            cooperadosData.some((item: CooperadoOption) => String(item.id) === current)
+              ? current
+              : cooperadosData[0]
+                ? String(cooperadosData[0].id)
+                : "",
+          );
+        }
       }
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Não foi possível carregar seus registros.");
@@ -276,6 +282,36 @@ export default function MeusRegistrosPage() {
   const currentMonthTurnos = turnos.filter((turno) =>
     dateInSaoPaulo(turno.inicio).startsWith(currentMonth),
   );
+  const recordsTurnos =
+    profile === "PRESIDENTE"
+      ? turnos.filter(
+          (turno) =>
+            dateInSaoPaulo(turno.inicio).startsWith(recordsMonth) &&
+            (!recordsCooperadoId ||
+              String(turno.cooperadoId) === recordsCooperadoId),
+        )
+      : currentMonthTurnos;
+  const recordsProducoes =
+    profile === "PRESIDENTE"
+      ? producoes.filter(
+          (item) =>
+            item.data.startsWith(recordsMonth) &&
+            (!recordsCooperadoId ||
+              String(item.cooperadoId) === recordsCooperadoId),
+        )
+      : producoes;
+  const recordsCooperados =
+    profile === "PRESIDENTE"
+      ? cooperados.filter(
+          (cooperado) =>
+            (!recordsCooperadoId ||
+              String(cooperado.id) === recordsCooperadoId) &&
+            (recordsTurnos.some((turno) => turno.cooperadoId === cooperado.id) ||
+              recordsProducoes.some(
+                (item) => item.cooperadoId === cooperado.id,
+              )),
+        )
+      : [];
   const monthHours = currentMonthTurnos.reduce(
     (totals, turno) => {
       if (turno.status !== "FECHADO" || !turno.saida || turno.horasTrabalhadas === null) {
@@ -346,6 +382,38 @@ export default function MeusRegistrosPage() {
             </div>
           )}
         </section>
+
+        {profile === "PRESIDENTE" && (
+          <section
+            aria-label="Filtros de registros"
+            className="mt-6 grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:grid-cols-2"
+          >
+            <label className="text-sm font-medium text-slate-700">
+              Competência
+              <input
+                type="month"
+                value={recordsMonth}
+                onChange={(event) => setRecordsMonth(event.target.value)}
+                className="mt-1 min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm"
+              />
+            </label>
+            <label className="text-sm font-medium text-slate-700">
+              Cooperado
+              <select
+                value={recordsCooperadoId}
+                onChange={(event) => setRecordsCooperadoId(event.target.value)}
+                className="mt-1 min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm"
+              >
+                <option value="">Todos os cooperados</option>
+                {cooperados.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.nome}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </section>
+        )}
 
         <section className="mt-6 grid gap-6 lg:grid-cols-2">
           <div id="turnos" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -456,37 +524,104 @@ export default function MeusRegistrosPage() {
               </button>
             )}
             <div className="mt-5 space-y-2">
-              {currentMonthTurnos.map((turno) => (
-                <div key={turno.id} className="grid gap-2 rounded-lg bg-slate-50 px-3 py-3 text-sm sm:grid-cols-[1fr_auto] sm:items-center">
-                  <div className="grid gap-1 sm:grid-cols-2 sm:gap-4">
-                    {profile !== "COOPERADO" && (
-                      <span className="font-semibold">{turno.cooperadoNome}</span>
-                    )}
-                    <span><span className="font-medium text-slate-700">Entrada:</span> {formatDate(turno.inicio)}</span>
-                    <span>
-                      <span className="font-medium text-slate-700">Saída:</span>{" "}
-                      {turno.saida
-                        ? formatDate(turno.saida)
-                        : turno.status === "ABERTO"
-                          ? "Aguardando encerramento"
-                          : "Não registrada"}
-                    </span>
-                  </div>
-                  <span
-                    className={
-                      turno.status === "ABERTO" || !turno.saida
-                        ? "font-semibold text-amber-700"
-                        : "text-slate-500"
-                    }
-                  >
-                    {turno.status === "ABERTO"
-                      ? `Em andamento · ${dayTypeLabel(turno.tipoDia)}`
-                      : turno.saida
-                        ? `${turno.horasTrabalhadas?.toFixed(2) ?? "0.00"} h · ${dayTypeLabel(turno.tipoDia)}`
-                        : `Fechado sem horário de saída · ${dayTypeLabel(turno.tipoDia)}`}
-                  </span>
-                </div>
-              ))}
+              {profile === "PRESIDENTE"
+                ? recordsCooperados
+                    .filter((cooperado) =>
+                      recordsTurnos.some(
+                        (turno) => turno.cooperadoId === cooperado.id,
+                      ),
+                    )
+                    .map((cooperado) => {
+                    const cooperadoTurnos = recordsTurnos.filter(
+                      (turno) => turno.cooperadoId === cooperado.id,
+                    );
+                    const totalHours = cooperadoTurnos.reduce(
+                      (total, turno) =>
+                        total + (turno.horasTrabalhadas ?? 0),
+                      0,
+                    );
+                    return (
+                      <details
+                        key={cooperado.id}
+                        className="rounded-lg border border-slate-200 bg-slate-50"
+                      >
+                        <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm">
+                          <span className="font-semibold text-slate-900">
+                            {cooperado.nome}
+                          </span>
+                          <span className="text-slate-500">
+                            {cooperadoTurnos.length} turnos · {totalHours.toLocaleString("pt-BR", { maximumFractionDigits: 2 })} h
+                          </span>
+                        </summary>
+                        <div className="space-y-2 border-t border-slate-200 p-3">
+                          {cooperadoTurnos.map((turno) => (
+                            <div
+                              key={turno.id}
+                              className="grid gap-2 rounded-lg bg-white px-3 py-3 text-sm sm:grid-cols-[1fr_auto] sm:items-center"
+                            >
+                              <div className="grid gap-1 sm:grid-cols-2 sm:gap-4">
+                                <span>
+                                  <span className="font-medium text-slate-700">Entrada:</span>{" "}
+                                  {formatDate(turno.inicio)}
+                                </span>
+                                <span>
+                                  <span className="font-medium text-slate-700">Saída:</span>{" "}
+                                  {turno.saida
+                                    ? formatDate(turno.saida)
+                                    : turno.status === "ABERTO"
+                                      ? "Aguardando encerramento"
+                                      : "Não registrada"}
+                                </span>
+                              </div>
+                              <span className="text-slate-500">
+                                {turno.status === "ABERTO"
+                                  ? `Em andamento · ${dayTypeLabel(turno.tipoDia)}`
+                                  : turno.saida
+                                    ? `${turno.horasTrabalhadas?.toFixed(2) ?? "0.00"} h · ${dayTypeLabel(turno.tipoDia)}`
+                                    : `Fechado sem horário de saída · ${dayTypeLabel(turno.tipoDia)}`}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </details>
+                    );
+                    })
+                : recordsTurnos.map((turno) => (
+                    <div key={turno.id} className="grid gap-2 rounded-lg bg-slate-50 px-3 py-3 text-sm sm:grid-cols-[1fr_auto] sm:items-center">
+                      <div className="grid gap-1 sm:grid-cols-2 sm:gap-4">
+                        {profile !== "COOPERADO" && (
+                          <span className="font-semibold">{turno.cooperadoNome}</span>
+                        )}
+                        <span><span className="font-medium text-slate-700">Entrada:</span> {formatDate(turno.inicio)}</span>
+                        <span>
+                          <span className="font-medium text-slate-700">Saída:</span>{" "}
+                          {turno.saida
+                            ? formatDate(turno.saida)
+                            : turno.status === "ABERTO"
+                              ? "Aguardando encerramento"
+                              : "Não registrada"}
+                        </span>
+                      </div>
+                      <span
+                        className={
+                          turno.status === "ABERTO" || !turno.saida
+                            ? "font-semibold text-amber-700"
+                            : "text-slate-500"
+                        }
+                      >
+                        {turno.status === "ABERTO"
+                          ? `Em andamento · ${dayTypeLabel(turno.tipoDia)}`
+                          : turno.saida
+                            ? `${turno.horasTrabalhadas?.toFixed(2) ?? "0.00"} h · ${dayTypeLabel(turno.tipoDia)}`
+                            : `Fechado sem horário de saída · ${dayTypeLabel(turno.tipoDia)}`}
+                      </span>
+                    </div>
+                  ))}
+              {!loading && recordsTurnos.length === 0 && (
+                <p className="rounded-lg bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
+                  Não há turnos para os filtros selecionados.
+                </p>
+              )}
             </div>
           </div>
 
@@ -537,18 +672,72 @@ export default function MeusRegistrosPage() {
               </button>
             </form>}
             <div className="mt-5 space-y-2">
-              {producoes.map((item) => (
-                <div key={item.id} className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2 text-sm">
-                  <div>
-                    {profile !== "COOPERADO" && (
-                      <span className="mb-1 block font-semibold">{item.cooperadoNome}</span>
-                    )}
-                    <span>{item.material}</span>
-                    <span className="mt-1 block text-xs text-slate-500">Data: {formatProductionDate(item.data)}</span>
-                  </div>
-                  <span className="shrink-0 font-semibold">{item.kg.toFixed(2)} kg</span>
-                </div>
-              ))}
+              {profile === "PRESIDENTE"
+                ? recordsCooperados
+                    .filter((cooperado) =>
+                      recordsProducoes.some(
+                        (item) => item.cooperadoId === cooperado.id,
+                      ),
+                    )
+                    .map((cooperado) => {
+                    const cooperadoProducoes = recordsProducoes.filter(
+                      (item) => item.cooperadoId === cooperado.id,
+                    );
+                    const totalKg = cooperadoProducoes.reduce(
+                      (total, item) => total + item.kg,
+                      0,
+                    );
+                    return (
+                      <details
+                        key={cooperado.id}
+                        className="rounded-lg border border-slate-200 bg-slate-50"
+                      >
+                        <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm">
+                          <span className="font-semibold text-slate-900">
+                            {cooperado.nome}
+                          </span>
+                          <span className="text-slate-500">
+                            {cooperadoProducoes.length} registros · {totalKg.toLocaleString("pt-BR", { maximumFractionDigits: 2 })} kg
+                          </span>
+                        </summary>
+                        <div className="space-y-2 border-t border-slate-200 p-3">
+                          {cooperadoProducoes.map((item) => (
+                            <div
+                              key={item.id}
+                              className="flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-2 text-sm"
+                            >
+                              <div>
+                                <span>{item.material}</span>
+                                <span className="mt-1 block text-xs text-slate-500">
+                                  Data: {formatProductionDate(item.data)}
+                                </span>
+                              </div>
+                              <span className="shrink-0 font-semibold">
+                                {item.kg.toFixed(2)} kg
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </details>
+                    );
+                    })
+                : recordsProducoes.map((item) => (
+                    <div key={item.id} className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2 text-sm">
+                      <div>
+                        {profile !== "COOPERADO" && (
+                          <span className="mb-1 block font-semibold">{item.cooperadoNome}</span>
+                        )}
+                        <span>{item.material}</span>
+                        <span className="mt-1 block text-xs text-slate-500">Data: {formatProductionDate(item.data)}</span>
+                      </div>
+                      <span className="shrink-0 font-semibold">{item.kg.toFixed(2)} kg</span>
+                    </div>
+                  ))}
+              {!loading && recordsProducoes.length === 0 && (
+                <p className="rounded-lg bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
+                  Não há produção para os filtros selecionados.
+                </p>
+              )}
             </div>
           </div>
         </section>

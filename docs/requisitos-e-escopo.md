@@ -88,7 +88,7 @@ O painel inicial e o menu variam conforme o perfil. O servidor valida o acesso d
 | RF-11 | Aplicar elegibilidade e bônus | Menos de 60 horas reais não recebe parcela de produção; exatamente 60 participa. Mais de 180 horas recebe bônus adicional de 10% da parcela de produção. |
 | RF-12 | Apresentar memória | Mostrar horas reais e ponderadas, produção por material e valor, parcelas, bônus e total individual. |
 | RF-13 | Fechar rateio | Presidente pode fechar competência sem turno aberto nem inconsistências impeditivas; fechamento preserva os valores e bloqueia alterações nos preços, turnos e produção daquele mês. |
-| RF-14 | Consultar histórico | Presidente consulta prévias e períodos fechados; cooperado consulta apenas suas próprias memórias fechadas. |
+| RF-14 | Consultar histórico | Presidente consulta prévias e períodos fechados e filtra turnos/produção por competência e cooperado; cooperado consulta apenas suas próprias memórias fechadas. |
 | RF-15 | Painel por perfil | Exibir resumo e atalhos de operação para Presidente e Balanceiro; Cooperado vê exclusivamente seus totais e valores pessoais. |
 | RF-16 | Restringir páginas por perfil | Negar acesso direto a páginas fora das permissões do perfil, além das verificações existentes nas APIs. |
 
