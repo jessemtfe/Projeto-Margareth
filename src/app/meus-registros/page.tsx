@@ -58,6 +58,26 @@ function formatProductionDate(value: string) {
   }).format(new Date(value));
 }
 
+function dateInSaoPaulo(value: string) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date(value));
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((item) => item.type === type)?.value ?? "";
+  return `${part("year")}-${part("month")}-${part("day")}`;
+}
+
+function formatMonth(value: string) {
+  return new Intl.DateTimeFormat("pt-BR", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${value}-01T00:00:00.000Z`));
+}
+
 function currentSaoPauloDateTime() {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Sao_Paulo",
@@ -201,6 +221,25 @@ export default function MeusRegistrosPage() {
 
   const openShift = turnos.find((turno) => turno.status === "ABERTO");
   const totalKg = producoes.reduce((total, item) => total + item.kg, 0);
+  const currentMonth = currentSaoPauloDateTime().date.slice(0, 7);
+  const currentMonthTurnos = turnos.filter((turno) =>
+    dateInSaoPaulo(turno.inicio).startsWith(currentMonth),
+  );
+  const monthHours = currentMonthTurnos.reduce(
+    (totals, turno) => {
+      if (turno.status !== "FECHADO" || !turno.saida || turno.horasTrabalhadas === null) {
+        return totals;
+      }
+      const actual = turno.horasTrabalhadas;
+      const weighted =
+        turno.tipoDia === "DOMINGO" || turno.tipoDia === "FERIADO" ? actual * 2 : actual;
+      return {
+        actual: totals.actual + actual,
+        weighted: totals.weighted + weighted,
+      };
+    },
+    { actual: 0, weighted: 0 },
+  );
 
   return (
     <main className="min-h-screen bg-[#f4f7f2] px-6 py-8 lg:px-10">
@@ -240,6 +279,10 @@ export default function MeusRegistrosPage() {
               <CalendarClock className="h-5 w-5 text-slate-500" />
             </div>
             <p className="mt-2 text-sm text-slate-500">Registre sua entrada e saída para compor suas horas.</p>
+            <p className="mt-2 rounded-lg bg-[#f4f7f2] px-3 py-2 text-sm font-medium text-[#234531]">
+              Total de {formatMonth(currentMonth)}: {monthHours.actual.toFixed(2)} h reais ·{" "}
+              {monthHours.weighted.toFixed(2)} h consideradas no rateio
+            </p>
             {!openShift ? (
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 <label className="text-xs font-medium text-slate-600">
@@ -301,7 +344,7 @@ export default function MeusRegistrosPage() {
               {openShift ? "Encerrar turno" : "Iniciar turno"}
             </button>
             <div className="mt-5 space-y-2">
-              {turnos.slice(0, 5).map((turno) => (
+              {currentMonthTurnos.map((turno) => (
                 <div key={turno.id} className="grid gap-2 rounded-lg bg-slate-50 px-3 py-3 text-sm sm:grid-cols-[1fr_auto] sm:items-center">
                   <div className="grid gap-1 sm:grid-cols-2 sm:gap-4">
                     <span><span className="font-medium text-slate-700">Entrada:</span> {formatDate(turno.inicio)}</span>
