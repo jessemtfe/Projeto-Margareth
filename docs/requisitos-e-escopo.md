@@ -38,6 +38,7 @@ Esta documentação descreve o produto completo, da Sprint 1 à Sprint 5. A Spri
 - Identificar domingo pela data; marcar feriados manualmente; ponderar em dobro ambos na parcela de horas.
 - Não usar turnos abertos no cálculo.
 - Registrar produção positiva em kg por cooperado, material e data, persistindo os dados no banco.
+- Restringir o cadastro e encerramento de turnos e o registro de produção ao Balanceiro; o Cooperado consulta apenas os próprios registros.
 - Preparar os dados e limites de elegibilidade usados pelo rateio: 60 horas reais para a parcela de produção.
 
 ### Sprint 4 — Rateio, memória e fechamento
@@ -61,8 +62,8 @@ Esta documentação descreve o produto completo, da Sprint 1 à Sprint 5. A Spri
 | Perfil | Responsabilidades principais |
 |---|---|
 | Presidente | Gerenciar usuários, cadastros, preços, alertas, rateio e fechamento mensal. |
-| Balanceiro | Consultar geradores e registrar/acompanhar cargas, pesagens e etapas. |
-| Cooperado | Registrar seus próprios turnos e produção e consultar suas memórias fechadas. |
+| Balanceiro | Consultar geradores; registrar entrada/saída de turnos e produção por cooperado; registrar/acompanhar cargas, pesagens e etapas. |
+| Cooperado | Consultar apenas suas próprias horas, produção e memórias fechadas; não cadastrar nem alterar esses registros. |
 
 O servidor valida permissões nas APIs; a navegação da interface não é a única barreira de acesso.
 
@@ -76,9 +77,9 @@ O servidor valida permissões nas APIs; a navegação da interface não é a ún
 | RF-04 | Registrar cargas | Balanceiro/Presidente informa gerador, material, data, peso e rejeito; material requer preço ativo. |
 | RF-05 | Acompanhar cargas | Carga avança somente para a próxima etapa; carga rejeitada na entrada não avança. |
 | RF-06 | Alertar rejeito elevado | Alertar quando as três cargas mais recentes de um gerador tiverem rejeito estritamente acima de 25%. |
-| RF-07 | Registrar turnos | Cooperado registra entrada e saída no mesmo dia; turno aberto não tem duração para rateio. |
+| RF-07 | Registrar turnos | Balanceiro registra entrada e saída do cooperado no mesmo dia; turno aberto não tem duração para rateio. |
 | RF-08 | Ponderar turnos | Domingo e feriado contam em dobro na parcela de horas; domingo é identificado pela data. |
-| RF-09 | Registrar produção | Cooperado registra data, material e quantidade positiva em kg. |
+| RF-09 | Registrar produção | Balanceiro registra cooperado, data, material e quantidade positiva em kg; Cooperado tem acesso somente de consulta aos próprios dados. |
 | RF-10 | Calcular prévia mensal | Avaliar produção pelos preços ativos da competência e mostrar parcelas de horas/produção de 50% cada. |
 | RF-11 | Aplicar elegibilidade e bônus | Menos de 60 horas reais não recebe parcela de produção; exatamente 60 participa. Mais de 180 horas recebe bônus adicional de 10% da parcela de produção. |
 | RF-12 | Apresentar memória | Mostrar horas reais e ponderadas, produção por material e valor, parcelas, bônus e total individual. |

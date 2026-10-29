@@ -75,6 +75,7 @@ export default function AppSidebar() {
       : account?.profile === "BALANCEIRO"
         ? [
             { href: "/", label: "Início", icon: House },
+            { href: "/meus-registros", label: "Registros dos cooperados", icon: UsersRound },
             { href: "/geradores", label: "Geradores", icon: Factory },
             { href: "/cargas", label: "Entrada de carga", icon: Truck },
           ]

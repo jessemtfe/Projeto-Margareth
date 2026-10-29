@@ -13,6 +13,8 @@ import {
 
 type Turno = {
   id: number;
+  cooperadoId: number;
+  cooperadoNome?: string;
   inicio: string;
   saida: string | null;
   tipoDia: "NORMAL" | "DOMINGO" | "FERIADO";
@@ -22,10 +24,15 @@ type Turno = {
 
 type Producao = {
   id: number;
+  cooperadoId: number;
+  cooperadoNome?: string;
   material: string;
   kg: number;
   data: string;
 };
+
+type Profile = "COOPERADO" | "BALANCEIRO" | "PRESIDENTE";
+type CooperadoOption = { id: number; nome: string };
 
 type Memoria = {
   id: number;
@@ -112,9 +119,12 @@ function formatMoney(value: number) {
 }
 
 export default function MeusRegistrosPage() {
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [producoes, setProducoes] = useState<Producao[]>([]);
   const [memorias, setMemorias] = useState<Memoria[]>([]);
+  const [cooperados, setCooperados] = useState<CooperadoOption[]>([]);
+  const [selectedCooperadoId, setSelectedCooperadoId] = useState("");
   const [materiais, setMateriais] = useState<string[]>([]);
   const [material, setMaterial] = useState("");
   const [kg, setKg] = useState("");
@@ -131,23 +141,51 @@ export default function MeusRegistrosPage() {
     setLoading(true);
     setError("");
     try {
+      const accountResponse = await fetch("/api/auth/me", { cache: "no-store" });
+      if (!accountResponse.ok) throw new Error("Não foi possível identificar seu perfil.");
+      const account = (await accountResponse.json()) as { profile: Profile };
+      setProfile(account.profile);
       const responses = await Promise.all([
         fetch("/api/turnos", { cache: "no-store" }),
         fetch("/api/producao", { cache: "no-store" }),
-        fetch("/api/rateio", { cache: "no-store" }),
+        account.profile === "BALANCEIRO"
+          ? Promise.resolve(null)
+          : fetch("/api/rateio", { cache: "no-store" }),
         fetch("/api/precos", { cache: "no-store" }),
+        account.profile === "BALANCEIRO"
+          ? fetch("/api/cooperados", { cache: "no-store" })
+          : Promise.resolve(null),
       ]);
-      if (responses.slice(0, 3).some((response) => !response.ok)) {
+      const [turnosResponse, producaoResponse, memoriaResponse, materialsResponse, cooperadosResponse] = responses;
+      if (
+        !turnosResponse.ok ||
+        !producaoResponse.ok ||
+        (memoriaResponse && !memoriaResponse.ok) ||
+        (account.profile === "BALANCEIRO" &&
+          (!materialsResponse.ok || !cooperadosResponse?.ok))
+      ) {
         throw new Error("Não foi possível carregar seus registros.");
       }
-      const [turnosData, producaoData, memoriaData, materiaisData] = await Promise.all(
-        responses.map((response) => response.json()),
-      );
+      const turnosData = await turnosResponse.json();
+      const producaoData = await producaoResponse.json();
+      const memoriaData = memoriaResponse ? await memoriaResponse.json() : [];
+      const materialsData = materialsResponse.ok ? await materialsResponse.json() : [];
+      const cooperadosData = cooperadosResponse?.ok ? await cooperadosResponse.json() : [];
       setTurnos(turnosData as Turno[]);
       setProducoes(producaoData as Producao[]);
       setMemorias(memoriaData as Memoria[]);
-      if (responses[3].ok && Array.isArray(materiaisData)) {
-        setMateriais(materiaisData as string[]);
+      if (Array.isArray(materialsData)) {
+        setMateriais(materialsData as string[]);
+      }
+      if (Array.isArray(cooperadosData)) {
+        setCooperados(cooperadosData as CooperadoOption[]);
+        setSelectedCooperadoId((current) =>
+          cooperadosData.some((item: CooperadoOption) => String(item.id) === current)
+            ? current
+            : cooperadosData[0]
+              ? String(cooperadosData[0].id)
+              : "",
+        );
       }
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Não foi possível carregar seus registros.");
@@ -174,6 +212,7 @@ export default function MeusRegistrosPage() {
           turno
             ? { id: turno.id, horaSaida }
             : {
+                ...(profile === "BALANCEIRO" ? { cooperadoId: Number(selectedCooperadoId) } : {}),
                 data: turnoDate,
                 horaEntrada,
                 tipoDia: isSunday(turnoDate) ? "DOMINGO" : turnoTipoDia,
@@ -205,7 +244,12 @@ export default function MeusRegistrosPage() {
       const response = await fetch("/api/producao", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ material, kg: Number(kg), data: productionDate }),
+        body: JSON.stringify({
+          ...(profile === "BALANCEIRO" ? { cooperadoId: Number(selectedCooperadoId) } : {}),
+          material,
+          kg: Number(kg),
+          data: productionDate,
+        }),
       });
       const result = (await response.json()) as { error?: string };
       if (!response.ok) throw new Error(result.error ?? "Não foi possível registrar a produção.");
@@ -219,7 +263,11 @@ export default function MeusRegistrosPage() {
     }
   }
 
-  const openShift = turnos.find((turno) => turno.status === "ABERTO");
+  const openShift = turnos.find(
+    (turno) =>
+      turno.status === "ABERTO" &&
+      (profile !== "BALANCEIRO" || String(turno.cooperadoId) === selectedCooperadoId),
+  );
   const totalKg = producoes.reduce((total, item) => total + item.kg, 0);
   const currentMonth = currentSaoPauloDateTime().date.slice(0, 7);
   const currentMonthTurnos = turnos.filter((turno) =>
@@ -245,10 +293,16 @@ export default function MeusRegistrosPage() {
     <main className="min-h-screen bg-[#f4f7f2] px-6 py-8 lg:px-10">
       <div className="mx-auto max-w-6xl">
         <header className="mb-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#526b4c]">Área do cooperado</p>
-          <h1 className="mt-2 text-4xl font-black tracking-tight text-slate-900">Meus registros</h1>
+          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#526b4c]">
+            {profile === "BALANCEIRO" ? "Operação da cooperativa" : "Área do cooperado"}
+          </p>
+          <h1 className="mt-2 text-4xl font-black tracking-tight text-slate-900">
+            {profile === "BALANCEIRO" ? "Registros dos cooperados" : "Meus registros"}
+          </h1>
           <p className="mt-2 max-w-2xl text-slate-600">
-            Acompanhe seus turnos, registre sua produção e consulte sua memória de cálculo.
+            {profile === "BALANCEIRO"
+              ? "Registre turnos e produção para os cooperados."
+              : "Consulte seus turnos, produção e memória de cálculo."}
           </p>
         </header>
 
@@ -260,30 +314,56 @@ export default function MeusRegistrosPage() {
             <p className="mt-4 text-sm text-slate-500">Turno atual</p>
             <p className="mt-1 text-xl font-bold text-slate-900">{openShift ? "Em andamento" : "Encerrado"}</p>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <Scale className="h-5 w-5 text-[#526b4c]" />
-            <p className="mt-4 text-sm text-slate-500">Produção registrada</p>
-            <p className="mt-1 text-xl font-bold text-slate-900">{totalKg.toFixed(2)} kg</p>
-          </div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <WalletCards className="h-5 w-5 text-amber-600" />
-            <p className="mt-4 text-sm text-slate-500">Memórias disponíveis</p>
-            <p className="mt-1 text-xl font-bold text-slate-900">{memorias.length}</p>
-          </div>
+          {profile !== "BALANCEIRO" && (
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <Scale className="h-5 w-5 text-[#526b4c]" />
+              <p className="mt-4 text-sm text-slate-500">Produção registrada</p>
+              <p className="mt-1 text-xl font-bold text-slate-900">{totalKg.toFixed(2)} kg</p>
+            </div>
+          )}
+          {profile !== "BALANCEIRO" && (
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <WalletCards className="h-5 w-5 text-amber-600" />
+              <p className="mt-4 text-sm text-slate-500">Memórias disponíveis</p>
+              <p className="mt-1 text-xl font-bold text-slate-900">{memorias.length}</p>
+            </div>
+          )}
         </section>
 
         <section className="mt-6 grid gap-6 lg:grid-cols-2">
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-slate-900">Meu turno</h2>
+              <h2 className="text-lg font-bold text-slate-900">
+                {profile === "BALANCEIRO" ? "Registrar turno" : "Meus turnos"}
+              </h2>
               <CalendarClock className="h-5 w-5 text-slate-500" />
             </div>
-            <p className="mt-2 text-sm text-slate-500">Registre sua entrada e saída para compor suas horas.</p>
-            <p className="mt-2 rounded-lg bg-[#f4f7f2] px-3 py-2 text-sm font-medium text-[#234531]">
-              Total de {formatMonth(currentMonth)}: {monthHours.actual.toFixed(2)} h reais ·{" "}
-              {monthHours.weighted.toFixed(2)} h consideradas no rateio
+            <p className="mt-2 text-sm text-slate-500">
+              {profile === "BALANCEIRO"
+                ? "Selecione o cooperado e registre entrada e saída."
+                : "Consulte suas horas registradas e consideradas no rateio."}
             </p>
+            {profile === "COOPERADO" && (
+              <p className="mt-2 rounded-lg bg-[#f4f7f2] px-3 py-2 text-sm font-medium text-[#234531]">
+                Total de {formatMonth(currentMonth)}: {monthHours.actual.toFixed(2)} h reais ·{" "}
+                {monthHours.weighted.toFixed(2)} h consideradas no rateio
+              </p>
+            )}
+            {profile === "BALANCEIRO" && (
+              <label className="mt-4 block text-xs font-medium text-slate-600">
+                Cooperado
+                <select
+                  required
+                  value={selectedCooperadoId}
+                  onChange={(event) => setSelectedCooperadoId(event.target.value)}
+                  className="mt-1 min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm"
+                >
+                  {cooperados.map((item) => <option key={item.id} value={item.id}>{item.nome}</option>)}
+                </select>
+              </label>
+            )}
             {!openShift ? (
+              profile === "BALANCEIRO" ? (
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 <label className="text-xs font-medium text-slate-600">
                   Data do turno
@@ -322,31 +402,41 @@ export default function MeusRegistrosPage() {
                   </span>
                 </label>
               </div>
+              ) : (
+                <p className="mt-5 text-sm text-slate-500">O Balanceiro registra e encerra os turnos.</p>
+              )
             ) : (
-              <label className="mt-5 block text-xs font-medium text-slate-600">
-                Horário de saída
-                <input
-                  type="time"
-                  required
-                  value={horaSaida}
-                  onChange={(event) => setHoraSaida(event.target.value)}
-                  className="mt-1 min-h-10 w-full rounded-lg border border-slate-300 px-3 text-sm"
-                />
-              </label>
+              profile === "BALANCEIRO" ? (
+                <label className="mt-5 block text-xs font-medium text-slate-600">
+                  Horário de saída
+                  <input
+                    type="time"
+                    required
+                    value={horaSaida}
+                    onChange={(event) => setHoraSaida(event.target.value)}
+                    className="mt-1 min-h-10 w-full rounded-lg border border-slate-300 px-3 text-sm"
+                  />
+                </label>
+              ) : (
+                <p className="mt-5 text-sm text-amber-700">Há um turno em andamento. O Balanceiro deve registrar a saída.</p>
+              )
             )}
-            <button
-              type="button"
-              disabled={saving}
-              onClick={() => void updateTurno(openShift)}
-              className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-lg bg-[#234531] px-4 text-sm font-semibold text-white disabled:opacity-60"
-            >
-              {openShift ? <CheckCircle2 className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-              {openShift ? "Encerrar turno" : "Iniciar turno"}
-            </button>
+            {profile === "BALANCEIRO" && (
+              <button
+                type="button"
+                disabled={saving || !selectedCooperadoId}
+                onClick={() => void updateTurno(openShift)}
+                className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-lg bg-[#234531] px-4 text-sm font-semibold text-white disabled:opacity-60"
+              >
+                {openShift ? <CheckCircle2 className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                {openShift ? "Registrar saída" : "Registrar entrada"}
+              </button>
+            )}
             <div className="mt-5 space-y-2">
               {currentMonthTurnos.map((turno) => (
                 <div key={turno.id} className="grid gap-2 rounded-lg bg-slate-50 px-3 py-3 text-sm sm:grid-cols-[1fr_auto] sm:items-center">
                   <div className="grid gap-1 sm:grid-cols-2 sm:gap-4">
+                    {profile === "BALANCEIRO" && <span className="font-semibold">{turno.cooperadoNome}</span>}
                     <span><span className="font-medium text-slate-700">Entrada:</span> {formatDate(turno.inicio)}</span>
                     <span>
                       <span className="font-medium text-slate-700">Saída:</span>{" "}
@@ -376,9 +466,26 @@ export default function MeusRegistrosPage() {
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-bold text-slate-900">Registrar produção</h2>
-            <p className="mt-2 text-sm text-slate-500">Informe o material e os quilogramas separados.</p>
-            <form onSubmit={(event) => void registerProduction(event)} className="mt-5 grid gap-3 sm:grid-cols-2">
+            <h2 className="text-lg font-bold text-slate-900">
+              {profile === "BALANCEIRO" ? "Registrar produção" : "Minha produção"}
+            </h2>
+            <p className="mt-2 text-sm text-slate-500">
+              {profile === "BALANCEIRO"
+                ? "Registre a quantidade produzida por cooperado e material."
+                : "Consulte suas quantidades produzidas por material."}
+            </p>
+            {profile === "BALANCEIRO" && <label className="mt-4 block text-xs font-medium text-slate-600">
+              Cooperado
+              <select
+                required
+                value={selectedCooperadoId}
+                onChange={(event) => setSelectedCooperadoId(event.target.value)}
+                className="mt-1 min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm"
+              >
+                {cooperados.map((item) => <option key={item.id} value={item.id}>{item.nome}</option>)}
+              </select>
+            </label>}
+            {profile === "BALANCEIRO" && <form onSubmit={(event) => void registerProduction(event)} className="mt-5 grid gap-3 sm:grid-cols-2">
               <label className="text-xs font-medium text-slate-600">
                 Data da produção
                 <input
@@ -397,11 +504,12 @@ export default function MeusRegistrosPage() {
               <button disabled={saving} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-[#526b4c] px-4 text-sm font-semibold text-white disabled:opacity-60 sm:col-span-2">
                 <Plus className="h-4 w-4" /> Adicionar produção
               </button>
-            </form>
+            </form>}
             <div className="mt-5 space-y-2">
               {producoes.slice(0, 5).map((item) => (
                 <div key={item.id} className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2 text-sm">
                   <div>
+                    {profile === "BALANCEIRO" && <span className="mb-1 block font-semibold">{item.cooperadoNome}</span>}
                     <span>{item.material}</span>
                     <span className="mt-1 block text-xs text-slate-500">Data: {formatProductionDate(item.data)}</span>
                   </div>
@@ -412,7 +520,7 @@ export default function MeusRegistrosPage() {
           </div>
         </section>
 
-        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        {profile !== "BALANCEIRO" && <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex items-center gap-3">
             <Archive className="h-5 w-5 text-[#526b4c]" />
             <div><h2 className="text-lg font-bold text-slate-900">Minha memória de cálculo</h2><p className="text-sm text-slate-500">Valores dos períodos de rateio já fechados.</p></div>
@@ -443,7 +551,7 @@ export default function MeusRegistrosPage() {
               </tbody>
             </table>
           </div>
-        </section>
+        </section>}
       </div>
     </main>
   );

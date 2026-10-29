@@ -29,7 +29,14 @@ export async function GET() {
     return NextResponse.json({ error: "Autenticação necessária." }, { status: 401 });
   }
   if (user.profile === "BALANCEIRO") {
-    return NextResponse.json({ error: "Acesso restrito aos dados dos cooperados." }, { status: 403 });
+    const cooperados = await prisma.cadastroCooperados.findMany({
+      select: { idCooperado: true, nome: true },
+      orderBy: { nome: "asc" },
+    });
+    return NextResponse.json(cooperados.map((item) => ({
+      id: item.idCooperado,
+      nome: item.nome,
+    })));
   }
 
   const cooperados = await prisma.cadastroCooperados.findMany({

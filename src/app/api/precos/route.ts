@@ -44,7 +44,7 @@ export async function GET() {
     select: { idPreco: true, material: true, precoPorKg: true, mes: true, status: true },
   });
 
-  if (user.profile === "COOPERADO") {
+  if (user.profile !== "PRESIDENTE") {
     const cargas = await prisma.tabelaCargas.findMany({
       select: { material: true },
       orderBy: { idCarga: "desc" },

@@ -24,8 +24,8 @@ O servidor local serve apenas para desenvolvimento. A versão acessível ao púb
 ## Perfis e permissões
 
 - **Presidente:** gerencia usuários, cadastros, preços, cargas, alertas e fechamento mensal.
-- **Balanceiro:** consulta geradores e registra/acompanha cargas, pesagens e etapas.
-- **Cooperado:** registra seus turnos e produção e consulta suas próprias memórias fechadas.
+- **Balanceiro:** consulta geradores, registra turnos (entrada e saída) e produção por cooperado, além de registrar/acompanhar cargas, pesagens e etapas.
+- **Cooperado:** consulta apenas suas próprias horas, produção e memórias fechadas; não cadastra nem altera esses registros.
 
 As permissões são verificadas no servidor, além da navegação apresentada pela interface.
 
