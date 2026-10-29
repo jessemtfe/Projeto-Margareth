@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "test:sprint3": "node --experimental-strip-types --test tests/sprint3-rules.test.mjs",
-    "test:sprint4": "node --experimental-strip-types --test tests/sprint4-rateio.test.mjs"
+    "test:sprint4": "node --experimental-strip-types --test tests/sprint4-rateio.test.mjs",
+    "test:sprint5": "node --experimental-strip-types --test tests/sprint3-rules.test.mjs tests/sprint4-rateio.test.mjs tests/carga-rules.test.mjs",
+    "test:db-smoke": "node scripts/smoke-db.mjs"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

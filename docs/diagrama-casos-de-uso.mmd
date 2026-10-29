@@ -1,0 +1,30 @@
+flowchart LR
+  P[Presidente]
+  B[Balanceiro]
+  C[Cooperado]
+
+  subgraph EcoCat
+    U1((Gerenciar acessos))
+    U2((Manter geradores e cooperados))
+    U3((Manter preços))
+    U4((Registrar e acompanhar cargas))
+    U5((Consultar alertas de rejeito))
+    U6((Registrar turno))
+    U7((Registrar produção))
+    U8((Consultar memória individual))
+    U9((Conferir prévia do rateio))
+    U10((Fechar competência))
+  end
+
+  P --> U1
+  P --> U2
+  P --> U3
+  P --> U4
+  P --> U5
+  P --> U9
+  P --> U10
+  B --> U4
+  B --> U5
+  C --> U6
+  C --> U7
+  C --> U8

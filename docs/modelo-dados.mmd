@@ -1,0 +1,96 @@
+erDiagram
+  USER_ACCOUNT ||--o{ AUTH_SESSION : possui
+  USER_ACCOUNT o|--o| CADASTRO_COOPERADO : vincula
+  USER_ACCOUNT o|--o{ RATEIO_PERIODO : fecha
+  CADASTRO_GERADOR ||--o{ TABELA_CARGA : recebe
+  CADASTRO_GERADOR ||--o{ ALERTA_REJEITO : gera
+  CADASTRO_COOPERADO ||--o{ TURNO : registra
+  CADASTRO_COOPERADO ||--o{ PRODUCAO : registra
+  CADASTRO_COOPERADO ||--o{ MEMORIA_RATEIO : recebe
+  RATEIO_PERIODO ||--o{ MEMORIA_RATEIO : contem
+  TABELA_PRECOS }o..o{ PRODUCAO : avalia_por_material_e_competencia
+
+  USER_ACCOUNT {
+    string id PK
+    string email UK
+    string profile
+    int cooperado_id FK
+    boolean active
+  }
+  AUTH_SESSION {
+    string id PK
+    string user_id FK
+    string token_hash UK
+    datetime expires_at
+  }
+  CADASTRO_GERADOR {
+    int id_gerador PK
+    string gerador
+    string tipo
+    string statu
+  }
+  TABELA_CARGA {
+    int id_carga PK
+    int gerador_id FK
+    string material
+    decimal peso
+    decimal rejeito
+    string status
+    string data
+  }
+  ALERTA_REJEITO {
+    int id PK
+    int gerador_id FK
+    json cargas
+    boolean ativo
+  }
+  CADASTRO_COOPERADO {
+    int id_cooperado PK
+    string nome
+    string situacao
+    string origem
+  }
+  TABELA_PRECOS {
+    int id_preco PK
+    string material
+    decimal preco_por_kg
+    string mes
+    string status
+  }
+  TURNO {
+    int id PK
+    int cooperado_id FK
+    datetime inicio
+    datetime saida
+    string tipo_dia
+    string status
+  }
+  PRODUCAO {
+    int id PK
+    int cooperado_id FK
+    string material
+    decimal kg
+    date data
+  }
+  RATEIO_PERIODO {
+    int id PK
+    string competencia UK
+    string status
+    datetime fechado_em
+    decimal valor_disponivel
+    decimal total_rateado
+  }
+  MEMORIA_RATEIO {
+    int id PK
+    int periodo_id FK
+    int cooperado_id FK
+    string nome_cooperado
+    decimal horas_reais
+    decimal horas_ponderadas
+    decimal kg_triados
+    decimal valor_horas
+    decimal valor_producao
+    decimal bonus
+    decimal valor_total
+    json detalhes
+  }
