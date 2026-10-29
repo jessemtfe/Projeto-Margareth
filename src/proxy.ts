@@ -38,7 +38,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (pathname === "/usuarios" && !hasProfile(user, "PRESIDENTE")) {
+  if ((pathname === "/usuarios" || pathname === "/rateio" || pathname.startsWith("/rateio/")) && !hasProfile(user, "PRESIDENTE")) {
     return NextResponse.redirect(new URL("/", request.url));
   }
   if (pathname === "/cooperados" && !hasProfile(user, "PRESIDENTE")) {

@@ -13,6 +13,7 @@ import {
   Truck,
   UsersRound,
   Bell,
+  Calculator,
   X,
 } from "lucide-react";
 
@@ -79,6 +80,7 @@ export default function AppSidebar() {
           ]
         : [
             ...navigation,
+            { href: "/rateio", label: "Rateio mensal", icon: Calculator },
             { href: "/usuarios", label: "Gerenciar acessos", icon: ShieldCheck },
             { href: "/alertas", label: "Alertas", icon: Bell },
           ];

@@ -155,13 +155,18 @@ model Producao {
 }
 
 model RateioPeriodo {
-  id           Int          @id @default(autoincrement())
-  competencia  String       @unique @db.VarChar(7)
-  status       RateioStatus @default(ABERTO)
-  fechadoEm    DateTime?    @map("fechado_em")
-  fechadoPorId String?      @map("fechado_por_id") @db.VarChar(30)
-  fechadoPor   UserAccount? @relation("RateioFechadoPor", fields: [fechadoPorId], references: [id], onDelete: SetNull)
-  memorias     MemoriaRateio[]
+  id                       Int          @id @default(autoincrement())
+  competencia              String       @unique @db.VarChar(7)
+  status                   RateioStatus @default(ABERTO)
+  fechadoEm                DateTime?    @map("fechado_em")
+  fechadoPorId             String?      @map("fechado_por_id") @db.VarChar(30)
+  valorDisponivel          Decimal      @default(0) @map("valor_disponivel") @db.Decimal(12, 2)
+  parcelaHorasDisponivel   Decimal      @default(0) @map("parcela_horas_disponivel") @db.Decimal(12, 2)
+  parcelaProducaoDisponivel Decimal      @default(0) @map("parcela_producao_disponivel") @db.Decimal(12, 2)
+  bonusTotal               Decimal      @default(0) @map("bonus_total") @db.Decimal(12, 2)
+  totalRateado             Decimal      @default(0) @map("total_rateado") @db.Decimal(12, 2)
+  fechadoPor               UserAccount? @relation("RateioFechadoPor", fields: [fechadoPorId], references: [id], onDelete: SetNull)
+  memorias                 MemoriaRateio[]
 
   @@map("rateio_periodos")
 }
@@ -170,10 +175,13 @@ model MemoriaRateio {
   id            Int       @id @default(autoincrement())
   periodoId     Int       @map("periodo_id")
   cooperadoId   Int       @map("cooperado_id")
+  nomeCooperado String    @default("") @map("nome_cooperado") @db.VarChar(100)
+  horasReais    Decimal   @default(0) @map("horas_reais") @db.Decimal(8, 2)
   horas         Decimal   @db.Decimal(8, 2)
   kgTriados     Decimal   @map("kg_triados") @db.Decimal(10, 2)
   valorHoras    Decimal   @map("valor_horas") @db.Decimal(10, 2)
   valorProducao Decimal   @map("valor_producao") @db.Decimal(10, 2)
+  bonus         Decimal   @default(0) @db.Decimal(10, 2)
   valorTotal    Decimal   @map("valor_total") @db.Decimal(10, 2)
   detalhes      Json?
   periodo       RateioPeriodo @relation(fields: [periodoId], references: [id], onDelete: Cascade)

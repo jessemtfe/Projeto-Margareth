@@ -44,17 +44,23 @@ Os perfis são aplicados no servidor, além da navegação:
 - **Balanceiro**: consulta geradores e registra cargas, pesagens, status e alertas.
 - **Presidente**: administra usuários, geradores, cooperados, preços, cargas e fechamento do rateio.
 
-Turnos, produção por material, períodos de rateio e memórias de cálculo são persistidos no banco. O fechamento mensal é recusado se houver turno aberto; depois de fechado, o período e os preços associados não podem ser alterados. O endpoint de fechamento usa os preços ativos por material para a parcela de produção; a parcela por horas permanece explicitamente registrada como zero até a fórmula financeira oficial do rateio ser definida.
+Turnos, produção por material, períodos de rateio e memórias de cálculo são persistidos no banco. O fechamento mensal é recusado se houver turno aberto ou inconsistência nos turnos/preços; depois de fechado, os dados do rateio e os preços associados são preservados e não podem ser alterados.
 
 Configure `ADMIN_EMAIL` e `PUBLIC_APP_URL` no ambiente da Vercel, além de `DATABASE_URL` do TiDB Cloud. As tabelas `user_accounts` e `auth_sessions` são criadas no banco por `npx prisma db push`. Cookies de sessão são HttpOnly e Secure em produção; o acesso público de produção deve usar HTTPS.
 
-Para publicar alterações do schema na Vercel, execute `npx prisma db push` localmente depois de configurar a conexão TiDB e configure as variáveis de ambiente do projeto. O `db push` desta versão cria as tabelas `turnos`, `producoes`, `rateio_periodos` e `memorias_rateio` e adiciona o perfil funcional, a senha criptografada e o vínculo opcional de cooperado em `user_accounts`.
+Para publicar alterações do schema na Vercel, execute `npx prisma db push` localmente depois de configurar a conexão TiDB e configure as variáveis de ambiente do projeto. O `db push` cria e atualiza as tabelas `turnos`, `producoes`, `rateio_periodos` e `memorias_rateio`, além de adicionar o perfil funcional, a senha criptografada e o vínculo opcional de cooperado em `user_accounts`.
 
 ## Sprint 3 — Turnos, produção e rateio
 
 Cooperados vinculados registram a data e o horário de entrada e informam o horário de saída ao encerrar o turno. O servidor valida datas e horários, impede saída anterior ou igual à entrada e calcula as horas do turno; turnos ainda abertos ficam sem duração e não são considerados no cálculo. Domingos são identificados pela data. Feriados móveis e municipais devem ser marcados manualmente como **Feriado**, pois o sistema não presume o calendário local da cooperativa.
 
-Cada registro de produção armazena cooperado, data, material e quilogramas, com validação da data real e da quantidade. No fechamento mensal, somente turnos fechados entram no total: horas de domingo e feriado são ponderadas em dobro. Cooperados com menos de 60 horas reais não recebem a parcela de produção; exatamente 60 horas já dá direito a ela. A parcela monetária por horas continua em zero até que a fórmula financeira oficial do rateio seja definida. Para validar as regras puras da Sprint 3, execute `npm run test:sprint3`.
+Cada registro de produção armazena cooperado, data, material e quilogramas, com validação da data real e da quantidade. No rateio mensal, somente turnos fechados entram no total: horas de domingo e feriado são ponderadas em dobro. Cooperados com menos de 60 horas reais recebem apenas a parcela de horas; exatamente 60 horas já dá direito à parcela de produção.
+
+## Sprint 4 — Rateio mensal e fechamento
+
+A tela **Rateio mensal**, disponível para a Presidente, apresenta a prévia por competência, a produção por material e preço por quilo, a memória individual e os registros inconsistentes. O fundo disponível é a produção do mês avaliada pelos preços ativos, dividido em 50% para horas ponderadas e 50% para produção avaliada dos cooperados elegíveis. O bônus de 10% é adicional à parcela de produção individual quando o cooperado supera 180 horas reais; exatamente 180 horas não recebe o bônus.
+
+O fechamento bloqueia turnos abertos em qualquer competência, turnos inválidos, preços ausentes ou duplicados e parcelas sem cooperados elegíveis. Depois do fechamento, a memória fica imutável, os preços do período não podem ser criados, alterados ou removidos, e não podem ser registrados novos turnos ou produção naquele mês. A memória salva o nome, as horas reais e ponderadas, a produção e os valores por material, as parcelas, o bônus e o total. O endpoint `GET /api/rateio` permite consultar o histórico fechado. Execute `npm run test:sprint4` para validar as regras de rateio; `npm run test:sprint3` valida as regras de turnos.
 
 ## Learn More
 

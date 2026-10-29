@@ -131,8 +131,15 @@ export async function PATCH(request: Request) {
   }
   const atual = await prisma.tabelaPrecos.findUnique({ where: { idPreco: id } });
   if (!atual) return NextResponse.json({ error: "Preço não encontrado." }, { status: 404 });
-  const periodo = await prisma.rateioPeriodo.findUnique({ where: { competencia: mes }, select: { status: true } });
-  if (periodo?.status === "FECHADO") return NextResponse.json({ error: "O período está fechado." }, { status: 409 });
+  const periodosFechados = await prisma.rateioPeriodo.findMany({
+    where: { competencia: { in: [atual.mes, mes] }, status: "FECHADO" },
+    select: { competencia: true },
+  });
+  if (periodosFechados.length > 0) {
+    return NextResponse.json({
+      error: `Não é possível alterar o preço: o período ${periodosFechados[0].competencia} está fechado.`,
+    }, { status: 409 });
+  }
   const duplicado = await prisma.tabelaPrecos.findFirst({
     where: { material, mes, idPreco: { not: id } },
     select: { idPreco: true },

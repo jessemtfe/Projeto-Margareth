@@ -1,19 +1,10 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser, hasProfile, readJsonObject } from "../../../../lib/auth";
-import {
-  calculatePonderedHours,
-  isTurnoTipoDia,
-  participatesInProduction,
-  roundedHours,
-  saoPauloDate,
-  saoPauloMonthRange,
-  weekdayForDate,
-} from "../../../../lib/turno-rules";
+import { rateioIssuesBlockClosing } from "../../../../lib/rateio-calculation";
+import { buildRateioCalculation, isValidCompetence } from "../../../../lib/rateio-service";
 import prisma from "../../../../lib/prisma";
 
 export const dynamic = "force-dynamic";
-
-const competence = (value: string) => /^\d{4}-(0[1-9]|1[0-2])$/.test(value);
 
 export async function GET(request: Request) {
   const user = await getCurrentUser();
@@ -21,23 +12,35 @@ export async function GET(request: Request) {
   if (!hasProfile(user, "COOPERADO", "PRESIDENTE") || (user.profile === "COOPERADO" && !user.cooperadoId)) {
     return NextResponse.json({ error: "Acesso restrito às memórias de cálculo." }, { status: 403 });
   }
-  const period = new URL(request.url).searchParams.get("competencia") ?? undefined;
+  const competencia = new URL(request.url).searchParams.get("competencia") ?? undefined;
+  if (competencia && !isValidCompetence(competencia)) {
+    return NextResponse.json({ error: "Competência inválida. Use AAAA-MM." }, { status: 400 });
+  }
   const memorias = await prisma.memoriaRateio.findMany({
     where: {
-      periodo: period ? { competencia: period } : undefined,
+      periodo: competencia ? { competencia } : { status: "FECHADO" },
       ...(user.profile === "COOPERADO" ? { cooperadoId: user.cooperadoId! } : {}),
     },
-    include: { periodo: true },
+    include: { periodo: true, cooperado: { select: { nome: true } } },
     orderBy: { periodo: { competencia: "desc" } },
   });
-  return NextResponse.json(memorias.map((item) => ({
-    ...item,
-    horas: Number(item.horas),
-    kgTriados: Number(item.kgTriados),
-    valorHoras: Number(item.valorHoras),
-    valorProducao: Number(item.valorProducao),
-    valorTotal: Number(item.valorTotal),
-  })));
+  return NextResponse.json(memorias.map((item) => {
+    const details = item.detalhes as { horasReais?: number } | null;
+    return {
+      id: item.id,
+      periodo: item.periodo,
+      cooperadoId: item.cooperadoId,
+      nomeCooperado: item.nomeCooperado || item.cooperado.nome,
+      horasReais: Number(item.horasReais) || Number(details?.horasReais ?? 0),
+      horas: Number(item.horas),
+      kgTriados: Number(item.kgTriados),
+      valorHoras: Number(item.valorHoras),
+      valorProducao: Number(item.valorProducao),
+      bonus: Number(item.bonus),
+      valorTotal: Number(item.valorTotal),
+      detalhes: item.detalhes,
+    };
+  }));
 }
 
 export async function POST(request: Request) {
@@ -48,82 +51,95 @@ export async function POST(request: Request) {
   }
   const body = await readJsonObject(request);
   const competencia = typeof body?.competencia === "string" ? body.competencia : "";
-  if (!competence(competencia)) return NextResponse.json({ error: "Competência inválida. Use AAAA-MM." }, { status: 400 });
+  if (!isValidCompetence(competencia)) {
+    return NextResponse.json({ error: "Competência inválida. Use AAAA-MM." }, { status: 400 });
+  }
 
-  const [year, month] = competencia.split("-").map(Number);
-  const { start: inicio, end: fim } = saoPauloMonthRange(year, month);
-  const inicioData = new Date(Date.UTC(year, month - 1, 1));
-  const fimData = new Date(Date.UTC(year, month, 1));
-  const turnoAberto = await prisma.turno.findFirst({
-    where: { status: "ABERTO", inicio: { gte: inicio, lt: fim } },
-  });
-  if (turnoAberto) return NextResponse.json({ error: "Não é possível fechar enquanto houver turno aberto." }, { status: 409 });
+  const { calculation } = await buildRateioCalculation(competencia);
+  if (calculation.openShiftCount > 0) {
+    return NextResponse.json({
+      error: "Não é possível fechar enquanto existir algum turno aberto.",
+      issues: calculation.issues,
+    }, { status: 409 });
+  }
+  if (rateioIssuesBlockClosing(calculation.issues)) {
+    return NextResponse.json({
+      error: "Corrija as inconsistências da prévia antes de fechar o rateio.",
+      issues: calculation.issues,
+    }, { status: 409 });
+  }
 
-  const periodo = await prisma.rateioPeriodo.upsert({
-    where: { competencia },
-    create: { competencia },
-    update: {},
+  const fechadoEm = new Date();
+  try {
+    await prisma.$transaction(async (tx) => {
+      const current = await tx.rateioPeriodo.findUnique({ where: { competencia } });
+      if (current?.status === "FECHADO") {
+        throw new Error("RATEIO_JA_FECHADO");
+      }
+      const openShift = await tx.turno.findFirst({ where: { status: "ABERTO" }, select: { id: true } });
+      if (openShift) throw new Error("TURNO_ABERTO");
+      const periodo = await tx.rateioPeriodo.upsert({
+        where: { competencia },
+        create: {
+          competencia,
+          valorDisponivel: calculation.valorDisponivel,
+          parcelaHorasDisponivel: calculation.parcelaHorasDisponivel,
+          parcelaProducaoDisponivel: calculation.parcelaProducaoDisponivel,
+          bonusTotal: calculation.bonusTotal,
+          totalRateado: calculation.totalRateado,
+        },
+        update: {
+          status: "FECHADO",
+          fechadoEm,
+          fechadoPorId: user.id,
+          valorDisponivel: calculation.valorDisponivel,
+          parcelaHorasDisponivel: calculation.parcelaHorasDisponivel,
+          parcelaProducaoDisponivel: calculation.parcelaProducaoDisponivel,
+          bonusTotal: calculation.bonusTotal,
+          totalRateado: calculation.totalRateado,
+        },
+      });
+      await tx.memoriaRateio.deleteMany({ where: { periodoId: periodo.id } });
+      await tx.memoriaRateio.createMany({
+        data: calculation.linhas.map((line) => ({
+          periodoId: periodo.id,
+          cooperadoId: line.cooperadoId,
+          nomeCooperado: line.nomeCooperado,
+          horasReais: line.horasReais,
+          horas: line.horasPonderadas,
+          kgTriados: line.kgTriados,
+          valorHoras: line.valorHoras,
+          valorProducao: line.valorProducao,
+          bonus: line.bonus,
+          valorTotal: line.valorTotal,
+          detalhes: {
+            ...line.detalhes,
+            valorProduzido: line.valorProduzido,
+          },
+        })),
+      });
+      await tx.rateioPeriodo.update({
+        where: { id: periodo.id },
+        data: { status: "FECHADO", fechadoEm, fechadoPorId: user.id },
+      });
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message === "RATEIO_JA_FECHADO") {
+      return NextResponse.json({ error: "Este período já está fechado." }, { status: 409 });
+    }
+    if (error instanceof Error && error.message === "TURNO_ABERTO") {
+      return NextResponse.json({ error: "Não é possível fechar enquanto existir algum turno aberto." }, { status: 409 });
+    }
+    throw error;
+  }
+  return NextResponse.json({
+    competencia,
+    status: "FECHADO",
+    registros: calculation.linhas.length,
+    valorDisponivel: calculation.valorDisponivel,
+    parcelaHorasDisponivel: calculation.parcelaHorasDisponivel,
+    parcelaProducaoDisponivel: calculation.parcelaProducaoDisponivel,
+    bonusTotal: calculation.bonusTotal,
+    totalRateado: calculation.totalRateado,
   });
-  if (periodo.status === "FECHADO") return NextResponse.json({ error: "Este período já está fechado." }, { status: 409 });
-
-  const [cooperados, precos] = await Promise.all([
-    prisma.cadastroCooperados.findMany({ select: { idCooperado: true } }),
-    prisma.tabelaPrecos.findMany({ where: { status: "Ativo", mes: competencia } }),
-  ]);
-  const precoPorMaterial = new Map(precos.map((preco) => [preco.material.toLowerCase(), Number(preco.precoPorKg)]));
-  const producoes = await prisma.producao.findMany({
-    where: { data: { gte: inicioData, lt: fimData } },
-  });
-  const turnos = await prisma.turno.findMany({
-    where: { inicio: { gte: inicio, lt: fim }, status: "FECHADO", saida: { not: null } },
-  });
-  const memoriaData = cooperados.map((cooperado) => {
-    const turnosCooperado = turnos.filter((turno) => turno.cooperadoId === cooperado.idCooperado);
-    const horasReais = turnosCooperado.reduce(
-      (total, turno) => total + roundedHours(turno.inicio, turno.saida!),
-      0,
-    );
-    const horasPonderadas = turnosCooperado.reduce((total, turno) => {
-      const domingo = weekdayForDate(saoPauloDate(turno.inicio)) === 0;
-      const tipoDia = domingo
-        ? "DOMINGO"
-        : isTurnoTipoDia(turno.tipoDia)
-          ? turno.tipoDia
-          : "NORMAL";
-      const duracao = roundedHours(turno.inicio, turno.saida!);
-      return total + calculatePonderedHours(duracao, tipoDia, domingo);
-    }, 0);
-    const horas = Math.round(horasPonderadas * 100) / 100;
-    const registros = producoes.filter((item) => item.cooperadoId === cooperado.idCooperado);
-    const kgTriados = registros.reduce((total, item) => total + Number(item.kg), 0);
-    const participaProducao = participatesInProduction(horasReais);
-    const valorProducao = participaProducao
-      ? registros.reduce(
-          (total, item) =>
-            total + Number(item.kg) * (precoPorMaterial.get(item.material.toLowerCase()) ?? 0),
-          0,
-        )
-      : 0;
-    return {
-      periodoId: periodo.id,
-      cooperadoId: cooperado.idCooperado,
-      horas,
-      kgTriados,
-      valorHoras: 0,
-      valorProducao,
-      valorTotal: valorProducao,
-      detalhes: {
-        regra: "Horas de domingos e feriados ponderadas em dobro. Produção incluída somente com 60 horas reais ou mais. Fórmula monetária da parcela por horas ainda não definida.",
-        horasReais: Math.round(horasReais * 100) / 100,
-        horasPonderadas: horas,
-        participaProducao,
-      },
-    };
-  });
-  await prisma.$transaction([
-    prisma.memoriaRateio.deleteMany({ where: { periodoId: periodo.id } }),
-    ...memoriaData.map((data) => prisma.memoriaRateio.create({ data })),
-    prisma.rateioPeriodo.update({ where: { id: periodo.id }, data: { status: "FECHADO", fechadoEm: new Date(), fechadoPorId: user.id } }),
-  ]);
-  return NextResponse.json({ competencia, status: "FECHADO", registros: memoriaData.length });
 }

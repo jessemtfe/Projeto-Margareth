@@ -41,6 +41,13 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
+  const periodo = await prisma.rateioPeriodo.findUnique({
+    where: { competencia: dataValue.slice(0, 7) },
+    select: { status: true },
+  });
+  if (periodo?.status === "FECHADO") {
+    return NextResponse.json({ error: "Não é possível registrar produção em um período de rateio fechado." }, { status: 409 });
+  }
   const data = new Date(`${dataValue}T00:00:00.000Z`);
   const producao = await prisma.producao.create({
     data: { cooperadoId: user.cooperadoId, material, kg, data },

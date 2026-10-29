@@ -71,6 +71,13 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
+  const periodo = await prisma.rateioPeriodo.findUnique({
+    where: { competencia: data.slice(0, 7) },
+    select: { status: true },
+  });
+  if (periodo?.status === "FECHADO") {
+    return NextResponse.json({ error: "Não é possível registrar turnos em um período de rateio fechado." }, { status: 409 });
+  }
 
   const aberto = await prisma.turno.findFirst({ where: { cooperadoId: user.cooperadoId, status: "ABERTO" } });
   if (aberto) return NextResponse.json({ error: "Já existe um turno aberto." }, { status: 409 });
