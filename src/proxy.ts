@@ -1,7 +1,42 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { AUTH_COOKIE, getAuthenticatedUser, hasProfile } from "../lib/auth";
+import { AUTH_COOKIE, getAuthenticatedUser } from "../lib/auth";
 
 const publicPaths = new Set(["/login", "/cadastro"]);
+const pageAccess = {
+  PRESIDENTE: new Set([
+    "/",
+    "/alertas",
+    "/cargas",
+    "/cooperados",
+    "/dashboard",
+    "/geradores",
+    "/meus-registros",
+    "/precos",
+    "/rateio",
+    "/relatorios",
+    "/producao",
+    "/turnos",
+    "/usuarios",
+  ]),
+  BALANCEIRO: new Set([
+    "/",
+    "/alertas",
+    "/cargas",
+    "/dashboard",
+    "/geradores",
+    "/meus-registros",
+    "/producao",
+    "/turnos",
+  ]),
+  COOPERADO: new Set([
+    "/",
+    "/dashboard",
+    "/meus-registros",
+    "/minha-producao",
+    "/minhas-horas",
+    "/meu-rateio",
+  ]),
+} satisfies Record<string, Set<string>>;
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -38,11 +73,14 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if ((pathname === "/usuarios" || pathname === "/rateio" || pathname.startsWith("/rateio/")) && !hasProfile(user, "PRESIDENTE")) {
+  if (
+    !pathname.startsWith("/api/") &&
+    !pageAccess[user.profile].has(pathname) &&
+    ![...pageAccess[user.profile]].some((allowedPath) =>
+      allowedPath !== "/" && pathname.startsWith(`${allowedPath}/`),
+    )
+  ) {
     return NextResponse.redirect(new URL("/", request.url));
-  }
-  if (pathname === "/cooperados" && !hasProfile(user, "PRESIDENTE")) {
-    return NextResponse.redirect(new URL("/meus-registros", request.url));
   }
 
   if (pathname.startsWith("/api/") && !user.active) {

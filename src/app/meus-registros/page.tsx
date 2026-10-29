@@ -331,7 +331,7 @@ export default function MeusRegistrosPage() {
         </section>
 
         <section className="mt-6 grid gap-6 lg:grid-cols-2">
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div id="turnos" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-slate-900">
                 {profile === "BALANCEIRO" ? "Registrar turno" : "Meus turnos"}
@@ -465,7 +465,7 @@ export default function MeusRegistrosPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div id="producao" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-lg font-bold text-slate-900">
               {profile === "BALANCEIRO" ? "Registrar produção" : "Minha produção"}
             </h2>
@@ -520,7 +520,7 @@ export default function MeusRegistrosPage() {
           </div>
         </section>
 
-        {profile !== "BALANCEIRO" && <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        {profile !== "BALANCEIRO" && <section id="rateio" className="mt-6 scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex items-center gap-3">
             <Archive className="h-5 w-5 text-[#526b4c]" />
             <div><h2 className="text-lg font-bold text-slate-900">Minha memória de cálculo</h2><p className="text-sm text-slate-500">Valores dos períodos de rateio já fechados.</p></div>

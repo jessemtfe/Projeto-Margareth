@@ -4,26 +4,20 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
+  Boxes,
+  Calculator,
   Factory,
+  FileBarChart,
   House,
   LogOut,
   Menu,
   ShieldCheck,
+  Clock3,
   Tags,
   Truck,
   UsersRound,
-  Bell,
-  Calculator,
   X,
 } from "lucide-react";
-
-const navigation = [
-  { href: "/", label: "Início", icon: House },
-  { href: "/geradores", label: "Geradores", icon: Factory },
-  { href: "/cargas", label: "Entrada de carga", icon: Truck },
-  { href: "/cooperados", label: "Cooperados", icon: UsersRound },
-  { href: "/precos", label: "Tabela de preços", icon: Tags },
-];
 
 type Account = {
   name: string;
@@ -65,33 +59,53 @@ export default function AppSidebar() {
   const [account, setAccount] = useState<Account | null>(null);
   const [logoutError, setLogoutError] = useState("");
   const [accountError, setAccountError] = useState("");
+  const [currentHash, setCurrentHash] = useState("");
+
+  useEffect(() => {
+    const updateHash = () => setCurrentHash(window.location.hash);
+    updateHash();
+    window.addEventListener("hashchange", updateHash);
+    return () => window.removeEventListener("hashchange", updateHash);
+  }, [pathname]);
 
   function renderLinks() {
     const links = account?.profile === "COOPERADO"
       ? [
-          { href: "/", label: "Início", icon: House },
-      { href: "/meus-registros", label: "Meus registros", icon: UsersRound },
+          { href: "/", label: "Meu Painel", icon: House },
+          { href: "/meus-registros#turnos", label: "Minhas Horas", icon: Clock3 },
+          { href: "/meus-registros#producao", label: "Minha Produção", icon: Boxes },
+          { href: "/meus-registros#rateio", label: "Meu Rateio", icon: Calculator },
         ]
       : account?.profile === "BALANCEIRO"
         ? [
-            { href: "/", label: "Início", icon: House },
-            { href: "/meus-registros", label: "Registros dos cooperados", icon: UsersRound },
+            { href: "/cargas", label: "Cargas", icon: Truck },
             { href: "/geradores", label: "Geradores", icon: Factory },
-            { href: "/cargas", label: "Entrada de carga", icon: Truck },
+            { href: "/meus-registros#turnos", label: "Turnos", icon: Clock3 },
+            { href: "/meus-registros#producao", label: "Produção", icon: Boxes },
           ]
-        : [
-            ...navigation,
-            { href: "/rateio", label: "Rateio mensal", icon: Calculator },
-            { href: "/usuarios", label: "Gerenciar acessos", icon: ShieldCheck },
-            { href: "/alertas", label: "Alertas", icon: Bell },
-          ];
+        : account?.profile === "PRESIDENTE"
+          ? [
+              { href: "/", label: "Dashboard", icon: House },
+              { href: "/geradores", label: "Geradores", icon: Factory },
+              { href: "/cooperados", label: "Cooperados", icon: UsersRound },
+              { href: "/precos", label: "Tabela de Preços", icon: Tags },
+              { href: "/cargas", label: "Cargas", icon: Truck },
+              { href: "/meus-registros#turnos", label: "Turnos", icon: Clock3 },
+              { href: "/meus-registros#producao", label: "Produção", icon: Boxes },
+              { href: "/rateio", label: "Rateio", icon: Calculator },
+              { href: "/relatorios", label: "Relatórios", icon: FileBarChart },
+              { href: "/usuarios", label: "Gerenciar acessos", icon: ShieldCheck },
+            ]
+          : [];
 
     return links.map(({ href, label, icon: Icon }) => {
+      const pageHref = href.split("#", 1)[0];
+      const targetHash = href.includes("#") ? `#${href.split("#")[1]}` : "";
       const isActive =
-        href === "/"
+        pageHref === "/"
           ? pathname === "/"
-          : !href.includes("#") &&
-            (pathname === href || pathname.startsWith(`${href}/`));
+          : (pathname === pageHref || pathname.startsWith(`${pageHref}/`)) &&
+            (!targetHash || currentHash === targetHash);
 
       return (
         <Link
@@ -190,7 +204,7 @@ export default function AppSidebar() {
         <div className="px-2">
           <Brand />
         </div>
-        <nav aria-label="Navegação principal" className="mt-10 space-y-1">
+        <nav aria-label="Navegação principal" className="mt-10 min-h-0 flex-1 space-y-1 overflow-y-auto">
           {renderLinks()}
         </nav>
         {renderAccountActions()}
@@ -222,7 +236,7 @@ export default function AppSidebar() {
               <div className="px-2">
                 <Brand />
               </div>
-              <nav aria-label="Navegação principal" className="mt-10 space-y-1">
+              <nav aria-label="Navegação principal" className="mt-10 min-h-0 flex-1 space-y-1 overflow-y-auto">
                 {renderLinks()}
               </nav>
               {renderAccountActions()}

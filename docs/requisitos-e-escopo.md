@@ -61,11 +61,15 @@ Esta documentação descreve o produto completo, da Sprint 1 à Sprint 5. A Spri
 
 | Perfil | Responsabilidades principais |
 |---|---|
-| Presidente | Gerenciar usuários, cadastros, preços, alertas, rateio e fechamento mensal. |
-| Balanceiro | Consultar geradores; registrar entrada/saída de turnos e produção por cooperado; registrar/acompanhar cargas, pesagens e etapas. |
-| Cooperado | Consultar apenas suas próprias horas, produção e memórias fechadas; não cadastrar nem alterar esses registros. |
+| Presidente | Gerenciar cadastros e preços; consultar relatórios e alertas; acompanhar e fechar o rateio mensal. |
+| Balanceiro | Consultar geradores; registrar/acompanhar cargas, turnos e produção; não alterar preços nem fechar rateio. |
+| Cooperado | Consultar apenas seu painel, horas, produção e rateios; não acessar dados de outros cooperados nem alterar registros operacionais. |
 
-O servidor valida permissões nas APIs; a navegação da interface não é a única barreira de acesso.
+O painel inicial e o menu variam conforme o perfil. O servidor valida o acesso direto às páginas e às APIs; ocultar opções de navegação não é a única barreira de acesso.
+
+- Presidente: Dashboard, Geradores, Cooperados, Tabela de Preços, Cargas, Turnos, Produção, Rateio e Relatórios; mantém também o gerenciamento de acessos.
+- Balanceiro: Cargas, Geradores, Turnos e Produção.
+- Cooperado: Meu Painel, Minhas Horas, Minha Produção e Meu Rateio; os dados são limitados ao cadastro vinculado à conta.
 
 ## Requisitos funcionais
 
@@ -85,6 +89,8 @@ O servidor valida permissões nas APIs; a navegação da interface não é a ún
 | RF-12 | Apresentar memória | Mostrar horas reais e ponderadas, produção por material e valor, parcelas, bônus e total individual. |
 | RF-13 | Fechar rateio | Presidente pode fechar competência sem turno aberto nem inconsistências impeditivas; fechamento preserva os valores e bloqueia alterações nos preços, turnos e produção daquele mês. |
 | RF-14 | Consultar histórico | Presidente consulta prévias e períodos fechados; cooperado consulta apenas suas próprias memórias fechadas. |
+| RF-15 | Painel por perfil | Exibir resumo e atalhos de operação para Presidente e Balanceiro; Cooperado vê exclusivamente seus totais e valores pessoais. |
+| RF-16 | Restringir páginas por perfil | Negar acesso direto a páginas fora das permissões do perfil, além das verificações existentes nas APIs. |
 
 ## Requisitos não funcionais
 
