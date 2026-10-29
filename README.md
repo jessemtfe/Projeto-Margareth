@@ -50,6 +50,12 @@ Configure `ADMIN_EMAIL` e `PUBLIC_APP_URL` no ambiente da Vercel, além de `DATA
 
 Para publicar alterações do schema na Vercel, execute `npx prisma db push` localmente depois de configurar a conexão TiDB e configure as variáveis de ambiente do projeto. O `db push` desta versão cria as tabelas `turnos`, `producoes`, `rateio_periodos` e `memorias_rateio` e adiciona o perfil funcional, a senha criptografada e o vínculo opcional de cooperado em `user_accounts`.
 
+## Sprint 3 — Turnos, produção e rateio
+
+Cooperados vinculados registram a data e o horário de entrada e informam o horário de saída ao encerrar o turno. O servidor valida datas e horários, impede saída anterior ou igual à entrada e calcula as horas do turno; turnos ainda abertos ficam sem duração e não são considerados no cálculo. Domingos são identificados pela data. Feriados móveis e municipais devem ser marcados manualmente como **Feriado**, pois o sistema não presume o calendário local da cooperativa.
+
+Cada registro de produção armazena cooperado, data, material e quilogramas, com validação da data real e da quantidade. No fechamento mensal, somente turnos fechados entram no total: horas de domingo e feriado são ponderadas em dobro. Cooperados com menos de 60 horas reais não recebem a parcela de produção; exatamente 60 horas já dá direito a ela. A parcela monetária por horas continua em zero até que a fórmula financeira oficial do rateio seja definida. Para validar as regras puras da Sprint 3, execute `npm run test:sprint3`.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

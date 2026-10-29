@@ -133,6 +133,7 @@ model Turno {
   cooperadoId Int          @map("cooperado_id")
   inicio     DateTime
   saida      DateTime?
+  tipoDia    String        @default("NORMAL") @map("tipo_dia") @db.VarChar(20)
   status     TurnoStatus   @default(ABERTO)
   cooperado  CadastroCooperados @relation(fields: [cooperadoId], references: [idCooperado], onDelete: Cascade)
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser, hasProfile, readJsonObject } from "../../../../lib/auth";
+import { isValidDateOnly } from "../../../../lib/turno-rules";
 import prisma from "../../../../lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -26,10 +27,21 @@ export async function POST(request: Request) {
   const body = await readJsonObject(request);
   const material = typeof body?.material === "string" ? body.material.trim() : "";
   const kg = typeof body?.kg === "number" ? body.kg : Number(body?.kg);
-  const data = typeof body?.data === "string" ? new Date(body.data) : new Date();
-  if (!material || !Number.isFinite(kg) || kg <= 0 || Number.isNaN(data.getTime())) {
-    return NextResponse.json({ error: "Informe material, peso válido e data." }, { status: 400 });
+  const dataValue = typeof body?.data === "string" ? body.data : "";
+  if (
+    !material ||
+    material.length > 50 ||
+    !Number.isFinite(kg) ||
+    kg <= 0 ||
+    kg > 99_999_999.99 ||
+    !isValidDateOnly(dataValue)
+  ) {
+    return NextResponse.json(
+      { error: "Informe um material, uma quantidade válida e uma data real no formato AAAA-MM-DD." },
+      { status: 400 },
+    );
   }
+  const data = new Date(`${dataValue}T00:00:00.000Z`);
   const producao = await prisma.producao.create({
     data: { cooperadoId: user.cooperadoId, material, kg, data },
   });

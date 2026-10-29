@@ -1,11 +1,32 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser, hasProfile, readJsonObject } from "../../../../lib/auth";
+import {
+  completedShiftHours,
+  isValidClockTime,
+  isValidDateOnly,
+  isTurnoTipoDia,
+  saoPauloDate,
+  saoPauloDateTime,
+  weekdayForDate,
+} from "../../../../lib/turno-rules";
 import prisma from "../../../../lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-function serialize(turno: { id: number; cooperadoId: number; inicio: Date; saida: Date | null; status: string }) {
-  return { ...turno, inicio: turno.inicio.toISOString(), saida: turno.saida?.toISOString() ?? null };
+function serialize(turno: {
+  id: number;
+  cooperadoId: number;
+  inicio: Date;
+  saida: Date | null;
+  tipoDia: string;
+  status: string;
+}) {
+  return {
+    ...turno,
+    inicio: turno.inicio.toISOString(),
+    saida: turno.saida?.toISOString() ?? null,
+    horasTrabalhadas: completedShiftHours(turno.inicio, turno.saida),
+  };
 }
 
 export async function GET() {
@@ -22,17 +43,45 @@ export async function GET() {
   return NextResponse.json(turnos.map(serialize));
 }
 
-export async function POST() {
+export async function POST(request: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Autenticação necessária." }, { status: 401 });
   if (!hasProfile(user, "COOPERADO") || !user.cooperadoId) {
     return NextResponse.json({ error: "Somente um Cooperado vinculado pode iniciar um turno." }, { status: 403 });
   }
 
+  const body = await readJsonObject(request);
+  const data = typeof body?.data === "string" ? body.data : "";
+  const horaEntrada = typeof body?.horaEntrada === "string" ? body.horaEntrada : "";
+  const requestedTipoDia = body?.tipoDia;
+  if (
+    !isValidDateOnly(data) ||
+    !isValidClockTime(horaEntrada) ||
+    !isTurnoTipoDia(requestedTipoDia)
+  ) {
+    return NextResponse.json(
+      { error: "Informe uma data, um horário de entrada e um tipo de dia válidos." },
+      { status: 400 },
+    );
+  }
+  const tipoDia = weekdayForDate(data) === 0 ? "DOMINGO" : requestedTipoDia;
+  if (weekdayForDate(data) !== 0 && tipoDia === "DOMINGO") {
+    return NextResponse.json(
+      { error: "O tipo Domingo só pode ser usado em uma data que realmente caia no domingo." },
+      { status: 400 },
+    );
+  }
+
   const aberto = await prisma.turno.findFirst({ where: { cooperadoId: user.cooperadoId, status: "ABERTO" } });
   if (aberto) return NextResponse.json({ error: "Já existe um turno aberto." }, { status: 409 });
 
-  const turno = await prisma.turno.create({ data: { cooperadoId: user.cooperadoId, inicio: new Date() } });
+  const turno = await prisma.turno.create({
+    data: {
+      cooperadoId: user.cooperadoId,
+      inicio: saoPauloDateTime(data, horaEntrada),
+      tipoDia,
+    },
+  });
   return NextResponse.json(serialize(turno), { status: 201 });
 }
 
@@ -44,13 +93,33 @@ export async function PATCH(request: Request) {
   }
   const body = await readJsonObject(request);
   const id = typeof body?.id === "number" ? body.id : 0;
+  const horaSaida = typeof body?.horaSaida === "string" ? body.horaSaida : "";
+  if (!Number.isSafeInteger(id) || id <= 0 || !isValidClockTime(horaSaida)) {
+    return NextResponse.json(
+      { error: "Informe um turno e um horário de saída válidos." },
+      { status: 400 },
+    );
+  }
   const turno = await prisma.turno.findFirst({ where: { id, cooperadoId: user.cooperadoId } });
   if (!turno) return NextResponse.json({ error: "Turno não encontrado." }, { status: 404 });
   if (turno.status !== "ABERTO") return NextResponse.json({ error: "Este turno já foi encerrado." }, { status: 409 });
 
-  const encerrado = await prisma.turno.update({
-    where: { id },
-    data: { saida: new Date(), status: "FECHADO" },
+  const dataTurno = saoPauloDate(turno.inicio);
+  const saida = saoPauloDateTime(dataTurno, horaSaida);
+  if (saida.getTime() <= turno.inicio.getTime()) {
+    return NextResponse.json(
+      { error: "O horário de saída deve ser posterior ao horário de entrada no mesmo dia." },
+      { status: 400 },
+    );
+  }
+
+  const atualizado = await prisma.turno.updateMany({
+    where: { id, cooperadoId: user.cooperadoId, status: "ABERTO" },
+    data: { saida, status: "FECHADO" },
   });
+  if (atualizado.count !== 1) {
+    return NextResponse.json({ error: "Este turno já foi encerrado." }, { status: 409 });
+  }
+  const encerrado = await prisma.turno.findUniqueOrThrow({ where: { id } });
   return NextResponse.json(serialize(encerrado));
 }

@@ -15,6 +15,8 @@ type Turno = {
   id: number;
   inicio: string;
   saida: string | null;
+  tipoDia: "NORMAL" | "DOMINGO" | "FERIADO";
+  horasTrabalhadas: number | null;
   status: "ABERTO" | "FECHADO";
 };
 
@@ -37,7 +39,34 @@ function formatDate(value: string) {
   return new Intl.DateTimeFormat("pt-BR", {
     dateStyle: "short",
     timeStyle: "short",
+    timeZone: "America/Sao_Paulo",
   }).format(new Date(value));
+}
+
+function currentSaoPauloDateTime() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(new Date());
+  const value = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value ?? "";
+  return {
+    date: `${value("year")}-${value("month")}-${value("day")}`,
+    time: `${value("hour")}:${value("minute")}`,
+  };
+}
+
+function isSunday(date: string) {
+  return Boolean(date) && new Date(`${date}T12:00:00.000Z`).getUTCDay() === 0;
+}
+
+function dayTypeLabel(tipoDia: Turno["tipoDia"]) {
+  return tipoDia === "DOMINGO" ? "Domingo (horas em dobro)" : tipoDia === "FERIADO" ? "Feriado (horas em dobro)" : "Normal";
 }
 
 function formatMoney(value: number) {
@@ -54,6 +83,11 @@ export default function MeusRegistrosPage() {
   const [materiais, setMateriais] = useState<string[]>([]);
   const [material, setMaterial] = useState("");
   const [kg, setKg] = useState("");
+  const [productionDate, setProductionDate] = useState(() => currentSaoPauloDateTime().date);
+  const [turnoDate, setTurnoDate] = useState(() => currentSaoPauloDateTime().date);
+  const [horaEntrada, setHoraEntrada] = useState(() => currentSaoPauloDateTime().time);
+  const [horaSaida, setHoraSaida] = useState(() => currentSaoPauloDateTime().time);
+  const [turnoTipoDia, setTurnoTipoDia] = useState<"NORMAL" | "FERIADO">("NORMAL");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -100,12 +134,27 @@ export default function MeusRegistrosPage() {
     try {
       const response = await fetch("/api/turnos", {
         method: turno ? "PATCH" : "POST",
-        headers: turno ? { "Content-Type": "application/json" } : undefined,
-        body: turno ? JSON.stringify({ id: turno.id }) : undefined,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          turno
+            ? { id: turno.id, horaSaida }
+            : {
+                data: turnoDate,
+                horaEntrada,
+                tipoDia: isSunday(turnoDate) ? "DOMINGO" : turnoTipoDia,
+              },
+        ),
       });
       const result = (await response.json()) as { error?: string };
       if (!response.ok) throw new Error(result.error ?? "Não foi possível atualizar o turno.");
       await loadRecords();
+      if (!turno) {
+        const now = currentSaoPauloDateTime();
+        setTurnoDate(now.date);
+        setHoraEntrada(now.time);
+        setHoraSaida(now.time);
+        setTurnoTipoDia("NORMAL");
+      }
     } catch (turnoError) {
       setError(turnoError instanceof Error ? turnoError.message : "Não foi possível atualizar o turno.");
     } finally {
@@ -121,7 +170,7 @@ export default function MeusRegistrosPage() {
       const response = await fetch("/api/producao", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ material, kg: Number(kg), data: new Date().toISOString().slice(0, 10) }),
+        body: JSON.stringify({ material, kg: Number(kg), data: productionDate }),
       });
       const result = (await response.json()) as { error?: string };
       if (!response.ok) throw new Error(result.error ?? "Não foi possível registrar a produção.");
@@ -176,21 +225,77 @@ export default function MeusRegistrosPage() {
               <CalendarClock className="h-5 w-5 text-slate-500" />
             </div>
             <p className="mt-2 text-sm text-slate-500">Registre sua entrada e saída para compor suas horas.</p>
+            {!openShift ? (
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <label className="text-xs font-medium text-slate-600">
+                  Data do turno
+                  <input
+                    type="date"
+                    required
+                    value={turnoDate}
+                    onChange={(event) => setTurnoDate(event.target.value)}
+                    className="mt-1 min-h-10 w-full rounded-lg border border-slate-300 px-3 text-sm"
+                  />
+                </label>
+                <label className="text-xs font-medium text-slate-600">
+                  Horário de entrada
+                  <input
+                    type="time"
+                    required
+                    value={horaEntrada}
+                    onChange={(event) => setHoraEntrada(event.target.value)}
+                    className="mt-1 min-h-10 w-full rounded-lg border border-slate-300 px-3 text-sm"
+                  />
+                </label>
+                <label className="text-xs font-medium text-slate-600 sm:col-span-2">
+                  Tipo de dia
+                  <select
+                    value={isSunday(turnoDate) ? "DOMINGO" : turnoTipoDia}
+                    disabled={isSunday(turnoDate)}
+                    onChange={(event) => setTurnoTipoDia(event.target.value as "NORMAL" | "FERIADO")}
+                    className="mt-1 min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm disabled:bg-slate-100"
+                  >
+                    <option value="NORMAL">Normal</option>
+                    <option value="DOMINGO">Domingo (horas em dobro)</option>
+                    <option value="FERIADO">Feriado (horas em dobro)</option>
+                  </select>
+                  <span className="mt-1 block font-normal">
+                    Domingos são identificados automaticamente. Selecione Feriado para feriados locais ou móveis.
+                  </span>
+                </label>
+              </div>
+            ) : (
+              <label className="mt-5 block text-xs font-medium text-slate-600">
+                Horário de saída
+                <input
+                  type="time"
+                  required
+                  value={horaSaida}
+                  onChange={(event) => setHoraSaida(event.target.value)}
+                  className="mt-1 min-h-10 w-full rounded-lg border border-slate-300 px-3 text-sm"
+                />
+              </label>
+            )}
             <button
               type="button"
               disabled={saving}
               onClick={() => void updateTurno(openShift)}
-              className="mt-5 inline-flex min-h-10 items-center gap-2 rounded-lg bg-[#234531] px-4 text-sm font-semibold text-white disabled:opacity-60"
+              className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-lg bg-[#234531] px-4 text-sm font-semibold text-white disabled:opacity-60"
             >
               {openShift ? <CheckCircle2 className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
               {openShift ? "Encerrar turno" : "Iniciar turno"}
             </button>
             <div className="mt-5 space-y-2">
               {turnos.slice(0, 5).map((turno) => (
-                <div key={turno.id} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-sm">
-                  <span>{formatDate(turno.inicio)}</span>
+                <div key={turno.id} className="flex flex-col gap-1 rounded-lg bg-slate-50 px-3 py-2 text-sm sm:flex-row sm:items-center sm:justify-between">
+                  <span>
+                    Entrada: {formatDate(turno.inicio)}
+                    {turno.saida ? ` · Saída: ${formatDate(turno.saida)}` : ""}
+                  </span>
                   <span className={turno.status === "ABERTO" ? "font-semibold text-amber-700" : "text-slate-500"}>
-                    {turno.status === "ABERTO" ? "Aberto" : "Fechado"}
+                    {turno.status === "ABERTO"
+                      ? "Aberto"
+                      : `${turno.horasTrabalhadas?.toFixed(2) ?? "0.00"} h · ${dayTypeLabel(turno.tipoDia)}`}
                   </span>
                 </div>
               ))}
@@ -201,6 +306,16 @@ export default function MeusRegistrosPage() {
             <h2 className="text-lg font-bold text-slate-900">Registrar produção</h2>
             <p className="mt-2 text-sm text-slate-500">Informe o material e os quilogramas separados.</p>
             <form onSubmit={(event) => void registerProduction(event)} className="mt-5 grid gap-3 sm:grid-cols-2">
+              <label className="text-xs font-medium text-slate-600">
+                Data da produção
+                <input
+                  type="date"
+                  required
+                  value={productionDate}
+                  onChange={(event) => setProductionDate(event.target.value)}
+                  className="mt-1 min-h-10 w-full rounded-lg border border-slate-300 px-3 text-sm"
+                />
+              </label>
               <select value={material} onChange={(event) => setMaterial(event.target.value)} required className="min-h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm">
                 <option value="">Selecione o material</option>
                 {materiais.map((item) => <option key={item} value={item}>{item}</option>)}
