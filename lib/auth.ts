@@ -20,13 +20,21 @@ export type AuthenticatedUser = {
 function normalizeAdministrator(
   user: AuthenticatedUser,
 ): AuthenticatedUser {
-  if (user.role !== "ADMIN") {
+  const configuredAdminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const isConfiguredAdministrator =
+    user.role === "ADMIN" ||
+    (configuredAdminEmail !== undefined &&
+      user.email.toLowerCase() === configuredAdminEmail);
+
+  if (!isConfiguredAdministrator) {
     return user;
   }
 
   return {
     ...user,
+    role: "ADMIN",
     profile: "PRESIDENTE",
+    active: true,
   };
 }
 
