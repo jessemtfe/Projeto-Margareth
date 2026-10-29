@@ -255,8 +255,7 @@ export default async function HomePage() {
             <Shortcut href="/cooperados" title="Cooperados" description="Gerencie os cadastros e consulte os totais mensais." icon={UsersRound} />
             <Shortcut href="/precos" title="Tabela de preços" description="Gerencie os preços dos materiais por competência." icon={Tags} />
             <Shortcut href="/cargas" title="Cargas" description="Acompanhe as cargas e suas etapas." icon={Truck} />
-            <Shortcut href="/meus-registros#turnos" title="Turnos" description="Consulte os turnos registrados." icon={Clock3} />
-            <Shortcut href="/meus-registros#producao" title="Produção" description="Consulte os registros de produção." icon={Boxes} />
+            <Shortcut href="/meus-registros" title="Registros dos cooperados" description="Consulte turnos, horas e produção dos cooperados em uma única tela." icon={Boxes} />
             <Shortcut href="/rateio" title="Rateio mensal" description="Confira a prévia e feche o período." icon={Calculator} />
             <Shortcut href="/relatorios" title="Relatórios" description="Consulte indicadores e resumos mensais." icon={FileBarChart} />
             <Shortcut href="/alertas" title="Alertas de rejeito" description="Acompanhe ocorrências ativas dos geradores." icon={Bell} />

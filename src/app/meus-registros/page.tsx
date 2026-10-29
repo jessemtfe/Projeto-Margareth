@@ -294,15 +294,19 @@ export default function MeusRegistrosPage() {
       <div className="mx-auto max-w-6xl">
         <header className="mb-8">
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#526b4c]">
-            {profile === "BALANCEIRO" ? "Operação da cooperativa" : "Área do cooperado"}
+            {profile === "COOPERADO"
+              ? "Área do cooperado"
+              : "Operação da cooperativa"}
           </p>
           <h1 className="mt-2 text-4xl font-black tracking-tight text-slate-900">
-            {profile === "BALANCEIRO" ? "Registros dos cooperados" : "Meus registros"}
+            {profile === "COOPERADO" ? "Meus registros" : "Registros dos cooperados"}
           </h1>
           <p className="mt-2 max-w-2xl text-slate-600">
             {profile === "BALANCEIRO"
               ? "Registre turnos e produção para os cooperados."
-              : "Consulte seus turnos, produção e memória de cálculo."}
+              : profile === "PRESIDENTE"
+                ? "Consulte os turnos, a produção e as memórias de cálculo dos cooperados."
+                : "Consulte seus turnos, produção e memória de cálculo."}
           </p>
         </header>
 
@@ -334,14 +338,20 @@ export default function MeusRegistrosPage() {
           <div id="turnos" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-slate-900">
-                {profile === "BALANCEIRO" ? "Registrar turno" : "Meus turnos"}
+                {profile === "BALANCEIRO"
+                  ? "Registrar turno"
+                  : profile === "PRESIDENTE"
+                    ? "Turnos dos cooperados"
+                    : "Meus turnos"}
               </h2>
               <CalendarClock className="h-5 w-5 text-slate-500" />
             </div>
             <p className="mt-2 text-sm text-slate-500">
               {profile === "BALANCEIRO"
                 ? "Selecione o cooperado e registre entrada e saída."
-                : "Consulte suas horas registradas e consideradas no rateio."}
+                : profile === "PRESIDENTE"
+                  ? "Consulte os horários e as horas registradas para cada cooperado."
+                  : "Consulte suas horas registradas e consideradas no rateio."}
             </p>
             {profile === "COOPERADO" && (
               <p className="mt-2 rounded-lg bg-[#f4f7f2] px-3 py-2 text-sm font-medium text-[#234531]">
@@ -467,12 +477,18 @@ export default function MeusRegistrosPage() {
 
           <div id="producao" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-lg font-bold text-slate-900">
-              {profile === "BALANCEIRO" ? "Registrar produção" : "Minha produção"}
+              {profile === "BALANCEIRO"
+                ? "Registrar produção"
+                : profile === "PRESIDENTE"
+                  ? "Produção dos cooperados"
+                  : "Minha produção"}
             </h2>
             <p className="mt-2 text-sm text-slate-500">
               {profile === "BALANCEIRO"
                 ? "Registre a quantidade produzida por cooperado e material."
-                : "Consulte suas quantidades produzidas por material."}
+                : profile === "PRESIDENTE"
+                  ? "Consulte as quantidades registradas por cooperado, material e data."
+                  : "Consulte suas quantidades produzidas por material."}
             </p>
             {profile === "BALANCEIRO" && <label className="mt-4 block text-xs font-medium text-slate-600">
               Cooperado
@@ -523,7 +539,16 @@ export default function MeusRegistrosPage() {
         {profile !== "BALANCEIRO" && <section id="rateio" className="mt-6 scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex items-center gap-3">
             <Archive className="h-5 w-5 text-[#526b4c]" />
-            <div><h2 className="text-lg font-bold text-slate-900">Minha memória de cálculo</h2><p className="text-sm text-slate-500">Valores dos períodos de rateio já fechados.</p></div>
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">
+                {profile === "PRESIDENTE" ? "Memórias de cálculo" : "Minha memória de cálculo"}
+              </h2>
+              <p className="text-sm text-slate-500">
+                {profile === "PRESIDENTE"
+                  ? "Valores dos cooperados nos períodos de rateio já fechados."
+                  : "Valores dos períodos de rateio já fechados."}
+              </p>
+            </div>
           </div>
           <div className="mt-5 overflow-x-auto">
             <table className="min-w-full text-left text-sm">
