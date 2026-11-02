@@ -275,9 +275,6 @@ export default function MeusRegistrosPage() {
       (profile !== "BALANCEIRO" || String(turno.cooperadoId) === selectedCooperadoId),
   );
   const currentMonth = currentSaoPauloDateTime().date.slice(0, 7);
-  const monthKg = producoes
-    .filter((item) => item.data.slice(0, 7) === currentMonth)
-    .reduce((total, item) => total + item.kg, 0);
   const openShiftCount = turnos.filter((turno) => turno.status === "ABERTO").length;
   const currentMonthTurnos = turnos.filter((turno) =>
     dateInSaoPaulo(turno.inicio).startsWith(currentMonth),
@@ -300,6 +297,11 @@ export default function MeusRegistrosPage() {
               String(item.cooperadoId) === recordsCooperadoId),
         )
       : producoes;
+  const monthKgProducoes =
+    profile === "PRESIDENTE"
+      ? recordsProducoes
+      : producoes.filter((item) => item.data.startsWith(currentMonth));
+  const monthKg = monthKgProducoes.reduce((total, item) => total + item.kg, 0);
   const recordsCooperados =
     profile === "PRESIDENTE"
       ? cooperados.filter(
