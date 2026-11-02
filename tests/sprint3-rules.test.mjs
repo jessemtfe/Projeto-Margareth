@@ -7,6 +7,7 @@ import {
   isValidDateOnly,
   participatesInProduction,
   roundedHours,
+  saoPauloCompetence,
   saoPauloDateTime,
   weekdayForDate,
 } from "../lib/turno-rules.ts";
@@ -39,6 +40,11 @@ test("rejects an exit time before or equal to entry", () => {
 test("identifies Sunday using the shift date", () => {
   assert.equal(weekdayForDate("2026-10-25"), 0);
   assert.equal(weekdayForDate("2026-10-26"), 1);
+});
+
+test("uses the São Paulo month boundary for current competence", () => {
+  assert.equal(saoPauloCompetence(new Date("2026-11-01T01:00:00.000Z")), "2026-10");
+  assert.equal(saoPauloCompetence(new Date("2026-11-01T03:00:00.000Z")), "2026-11");
 });
 
 test("doubles Sunday and holiday hours but not normal hours", () => {

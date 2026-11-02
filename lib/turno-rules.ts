@@ -32,6 +32,10 @@ export function saoPauloDate(value: Date) {
   return `${part("year")}-${part("month")}-${part("day")}`;
 }
 
+export function saoPauloCompetence(value: Date = new Date()) {
+  return saoPauloDate(value).slice(0, 7);
+}
+
 export function roundedHours(start: Date, end: Date) {
   const minutes = (end.getTime() - start.getTime()) / 60_000;
   return Math.round((minutes / 60) * 100) / 100;

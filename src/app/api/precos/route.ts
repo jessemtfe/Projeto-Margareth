@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { getCurrentUser, hasProfile } from "../../../../lib/auth";
 import prisma from "../../../../lib/prisma";
+import { saoPauloCompetence } from "../../../../lib/turno-rules";
 
 export const dynamic = "force-dynamic";
 
@@ -39,27 +40,28 @@ export async function GET() {
     return NextResponse.json({ error: "Acesso restrito aos preços." }, { status: 403 });
   }
 
-  const precos = await prisma.tabelaPrecos.findMany({
-    orderBy: { idPreco: "desc" },
-    select: { idPreco: true, material: true, precoPorKg: true, mes: true, status: true },
-  });
-
   if (user.profile !== "PRESIDENTE") {
-    const cargas = await prisma.tabelaCargas.findMany({
+    const activePrices = await prisma.tabelaPrecos.findMany({
+      where: { mes: saoPauloCompetence(), status: "Ativo" },
       select: { material: true },
-      orderBy: { idCarga: "desc" },
+      orderBy: { material: "asc" },
     });
     const materiais = Array.from(
       new Map(
-        [...precos, ...cargas]
-          .map((item) => ("material" in item ? item.material : ""))
+        activePrices
+          .map((item) => item.material)
           .map((item) => item.trim())
           .filter(Boolean)
-          .map((item) => [item.toLowerCase(), item]),
+          .map((item) => [item.toLocaleLowerCase("pt-BR"), item]),
       ).values(),
     );
     return NextResponse.json(materiais);
   }
+
+  const precos = await prisma.tabelaPrecos.findMany({
+    orderBy: { idPreco: "desc" },
+    select: { idPreco: true, material: true, precoPorKg: true, mes: true, status: true },
+  });
 
   return NextResponse.json(precos.map(formatPreco));
 }

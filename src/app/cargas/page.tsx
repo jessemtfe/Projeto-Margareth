@@ -11,6 +11,7 @@ import {
   getRejectionAlerts,
   isWeightOutsideExpectedRange,
 } from "../../../lib/carga-rules";
+import { saoPauloCompetence } from "../../../lib/turno-rules";
 
 type Carga = {
   id: number;
@@ -28,10 +29,7 @@ type Gerador = {
   nome: string;
 };
 
-type Preco = {
-  material: string;
-  status: string;
-};
+type Preco = string | { material: string; status: string; mes: string };
 
 type FormData = {
   gerador: string;
@@ -110,19 +108,19 @@ export default function CargasPage() {
         ]);
 
         if (isCurrent) {
+          const currentMonthMaterials = precosData.flatMap((preco) => {
+            if (typeof preco === "string") return [preco];
+            return preco.mes === saoPauloCompetence() && preco.status === "Ativo"
+              ? [preco.material]
+              : [];
+          });
           setCargas(cargasData);
           setGeradores(geradoresData);
-          setMateriais([
-            ...new Set(
-              precosData
-                .filter((preco) => preco.status === "Ativo")
-                .map((preco) => preco.material),
-            ),
-          ]);
+          setMateriais([...new Set(currentMonthMaterials)]);
           setLoadError("");
           setFormData((current) => ({
             ...current,
-            material: current.material || precosData.find((preco) => preco.status === "Ativo")?.material || "",
+            material: current.material || currentMonthMaterials[0] || "",
           }));
         }
       } catch {
@@ -465,7 +463,7 @@ export default function CargasPage() {
                 </div>
                 {materiais.length === 0 && (
                   <p className="text-xs text-amber-700">
-                    Cadastre um preço ativo na <Link href="/precos" className="font-semibold underline">tabela de preços</Link> antes de registrar uma carga.
+                    Cadastre um preço ativo para a competência atual na <Link href="/precos" className="font-semibold underline">tabela de preços</Link> antes de registrar uma carga.
                   </p>
                 )}
               </div>

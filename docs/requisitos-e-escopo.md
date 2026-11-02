@@ -77,7 +77,7 @@ O painel inicial e o menu variam conforme o perfil. O servidor valida o acesso d
 |---|---|---|
 | RF-01 | Manter geradores | Presidente cadastra e consulta geradores com tipo e situação. |
 | RF-02 | Manter cooperados | Presidente mantém nome e situação; horas, horas de domingo e kg do mês são exibidos a partir dos registros de turnos e produção. |
-| RF-03 | Manter preços por competência | Presidente registra material, preço/kg, competência e situação; não altera preço de período fechado. |
+| RF-03 | Manter preços por competência | Presidente consulta e registra preços por competência; operações usam somente materiais com preço ativo na competência atual; não altera preços de período fechado. |
 | RF-04 | Registrar cargas | Balanceiro/Presidente informa gerador, material, data, peso e rejeito; material requer preço ativo. |
 | RF-05 | Acompanhar cargas | Carga avança somente para a próxima etapa; carga rejeitada na entrada não avança. |
 | RF-06 | Alertar rejeito elevado | Alertar quando as três cargas mais recentes de um gerador tiverem rejeito estritamente acima de 25%. |
