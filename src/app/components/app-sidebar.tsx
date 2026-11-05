@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
+  Bell,
   Boxes,
   Calculator,
   Factory,
@@ -78,6 +79,7 @@ export default function AppSidebar() {
             { href: "/cargas", label: "Cargas", icon: Truck },
             { href: "/geradores", label: "Geradores", icon: Factory },
             { href: "/registro-cooperados", label: "Registros dos cooperados", icon: UsersRound },
+            { href: "/alertas", label: "Alertas", icon: Bell },
           ]
         : account?.profile === "PRESIDENTE"
           ? [
@@ -87,6 +89,7 @@ export default function AppSidebar() {
               { href: "/precos", label: "Tabela de Preços", icon: Tags },
               { href: "/cargas", label: "Cargas", icon: Truck },
               { href: "/registro-cooperados", label: "Registros dos cooperados", icon: Boxes },
+              { href: "/alertas", label: "Alertas", icon: Bell },
               { href: "/rateio", label: "Rateio", icon: Calculator },
               { href: "/relatorios", label: "Relatórios", icon: FileBarChart },
               { href: "/usuarios", label: "Gerenciar acessos", icon: ShieldCheck },
