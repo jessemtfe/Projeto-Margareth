@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowUpRight, Boxes, Calculator, Clock3, Truck, UsersRound } from "lucide-react";
 import { getCurrentUser } from "../../../lib/auth";
+import { summarizeRejectionPercentages } from "../../../lib/carga-rules";
 import { saoPauloMonthRange } from "../../../lib/turno-rules";
 import prisma from "../../../lib/prisma";
 
@@ -20,14 +21,20 @@ export default async function RelatoriosPage() {
   const year = Number(value("year"));
   const month = Number(value("month"));
   const competence = `${year}-${String(month).padStart(2, "0")}`;
+  const nextMonth = new Date(Date.UTC(year, month, 1));
+  const nextCompetence = `${nextMonth.getUTCFullYear()}-${String(nextMonth.getUTCMonth() + 1).padStart(2, "0")}`;
   const { start, end } = saoPauloMonthRange(year, month);
   const dateStart = new Date(Date.UTC(year, month - 1, 1));
   const dateEnd = new Date(Date.UTC(year, month, 1));
-  const [cooperados, cargas, producao, turnos, periodo] = await Promise.all([
+  const [cooperados, cargas, rejeitos, producao, turnos, periodo] = await Promise.all([
     prisma.cadastroCooperados.count({
       where: { situacao: "Ativo", OR: [{ origem: "MANUAL" }, { conta: { isNot: null } }] },
     }),
     prisma.tabelaCargas.count(),
+    prisma.tabelaCargas.findMany({
+      where: { data: { gte: `${competence}-01`, lt: `${nextCompetence}-01` } },
+      select: { geradorId: true, gerador: true, rejeito: true },
+    }),
     prisma.producao.aggregate({
       where: { data: { gte: dateStart, lt: dateEnd } },
       _sum: { kg: true },
@@ -41,6 +48,12 @@ export default async function RelatoriosPage() {
       select: { status: true, totalRateado: true },
     }),
   ]);
+  const rejectionReport = summarizeRejectionPercentages(
+    rejeitos.map((carga) => ({
+      ...carga,
+      rejeito: Number(carga.rejeito),
+    })),
+  );
   const productionKg = Number(producao._sum.kg ?? 0);
   const rateio = periodo?.status === "FECHADO"
     ? `Fechado · ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(periodo.totalRateado))}`
@@ -76,6 +89,32 @@ export default async function RelatoriosPage() {
               </span>
             </Link>
           ))}
+        </section>
+        <section aria-label="Percentuais mensais de rejeito por gerador" className="mt-8 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-900">Rejeitos por gerador</h2>
+          <p className="mt-1 text-sm text-slate-500">Percentual médio de rejeito nas cargas registradas em {competence}.</p>
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full min-w-[480px] border-collapse text-left">
+              <thead>
+                <tr className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
+                  <th scope="col" className="px-3 py-2 font-semibold">Gerador</th>
+                  <th scope="col" className="px-3 py-2 text-right font-semibold">Cargas no mês</th>
+                  <th scope="col" className="px-3 py-2 text-right font-semibold">Rejeito médio</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rejectionReport.length === 0 ? (
+                  <tr><td colSpan={3} className="px-3 py-6 text-center text-sm text-slate-500">Nenhuma carga registrada nesta competência.</td></tr>
+                ) : rejectionReport.map((item) => (
+                  <tr key={item.generatorId ?? item.gerador} className="border-b border-slate-100 last:border-0">
+                    <td className="px-3 py-3 text-sm font-medium text-slate-800">{item.gerador}</td>
+                    <td className="px-3 py-3 text-right text-sm tabular-nums text-slate-700">{item.cargas}</td>
+                    <td className="px-3 py-3 text-right text-sm tabular-nums text-slate-700">{item.rejeitoMedio.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
       </div>
     </main>
