@@ -285,7 +285,7 @@ export default function MeusRegistrosPage() {
     dateInSaoPaulo(turno.inicio).startsWith(currentMonth),
   );
   const recordsTurnos =
-    profile === "PRESIDENTE"
+    profile === "PRESIDENTE" || profile === "BALANCEIRO"
       ? turnos.filter(
           (turno) =>
             dateInSaoPaulo(turno.inicio).startsWith(recordsMonth) &&
@@ -294,7 +294,7 @@ export default function MeusRegistrosPage() {
         )
       : currentMonthTurnos;
   const recordsProducoes =
-    profile === "PRESIDENTE"
+    profile === "PRESIDENTE" || profile === "BALANCEIRO"
       ? producoes.filter(
           (item) =>
             item.data.startsWith(recordsMonth) &&
@@ -303,10 +303,16 @@ export default function MeusRegistrosPage() {
         )
       : producoes;
   const monthKgProducoes =
-    profile === "PRESIDENTE"
+    profile === "PRESIDENTE" || profile === "BALANCEIRO"
       ? recordsProducoes
       : producoes.filter((item) => item.data.startsWith(currentMonth));
   const monthKg = monthKgProducoes.reduce((total, item) => total + item.kg, 0);
+  const recordsHours = recordsTurnos.reduce((total, turno) => {
+    if (turno.status !== "FECHADO" || !turno.saida || turno.horasTrabalhadas === null) {
+      return total;
+    }
+    return total + turno.horasTrabalhadas;
+  }, 0);
   const recordsCooperados =
     profile === "PRESIDENTE"
       ? cooperados.filter(
@@ -377,7 +383,7 @@ export default function MeusRegistrosPage() {
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <Scale className="h-5 w-5 text-[#526b4c]" />
               <p className="mt-4 text-sm text-slate-500">
-                {profile === "PRESIDENTE" ? "Produção no mês" : "Produção registrada"}
+                {profile === "PRESIDENTE" ? "Produção no filtro" : "Produção registrada"}
               </p>
               <p className="mt-1 text-xl font-bold text-slate-900">{monthKg.toFixed(2)} kg</p>
             </div>
@@ -391,13 +397,13 @@ export default function MeusRegistrosPage() {
           )}
         </section>
 
-        {profile === "PRESIDENTE" && (
+        {(profile === "PRESIDENTE" || profile === "BALANCEIRO") && (
           <section
             aria-label="Filtros de registros"
             className="mt-6 grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:grid-cols-2"
           >
             <label className="text-sm font-medium text-slate-700">
-              Competência
+              Competência da consulta
               <input
                 type="month"
                 value={recordsMonth}
@@ -406,7 +412,7 @@ export default function MeusRegistrosPage() {
               />
             </label>
             <label className="text-sm font-medium text-slate-700">
-              Cooperado
+              Cooperado para consulta
               <select
                 value={recordsCooperadoId}
                 onChange={(event) => setRecordsCooperadoId(event.target.value)}
@@ -437,7 +443,7 @@ export default function MeusRegistrosPage() {
             </div>
             <p className="mt-2 text-sm text-slate-500">
               {profile === "BALANCEIRO"
-                ? "Selecione o cooperado e registre entrada e saída."
+                ? "Filtre os registros abaixo ou selecione um cooperado para registrar entrada e saída."
                 : profile === "PRESIDENTE"
                   ? "Consulte os horários e as horas registradas para cada cooperado."
                   : "Consulte suas horas registradas e consideradas no rateio."}
@@ -446,6 +452,12 @@ export default function MeusRegistrosPage() {
               <p className="mt-2 rounded-lg bg-[#f4f7f2] px-3 py-2 text-sm font-medium text-[#234531]">
                 Total de {formatMonth(currentMonth)}: {monthHours.actual.toFixed(2)} h reais ·{" "}
                 {monthHours.weighted.toFixed(2)} h consideradas no rateio
+              </p>
+            )}
+            {(profile === "PRESIDENTE" || profile === "BALANCEIRO") && (
+              <p className="mt-2 rounded-lg bg-[#f4f7f2] px-3 py-2 text-sm font-medium text-[#234531]">
+                Total no filtro: {recordsHours.toLocaleString("pt-BR", { maximumFractionDigits: 2 })} h reais ·{" "}
+                {monthKg.toLocaleString("pt-BR", { maximumFractionDigits: 2 })} kg produzidos
               </p>
             )}
             {profile === "BALANCEIRO" && (

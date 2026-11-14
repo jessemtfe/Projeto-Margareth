@@ -61,7 +61,7 @@ export async function GET() {
       where:
         user.profile === "COOPERADO"
           ? { idCooperado: user.cooperadoId ?? -1 }
-          : { OR: [{ origem: "MANUAL" }, { conta: { isNot: null } }] },
+          : undefined,
       orderBy: { idCooperado: "desc" },
     }),
     prisma.turno.findMany({
