@@ -19,6 +19,7 @@ type Carga = {
   gerador: string;
   material: string;
   peso: number;
+  pesoSuspeito: boolean;
   rejeito: number;
   status: string;
   data: string;
@@ -214,8 +215,9 @@ export default function CargasPage() {
   }
 
   const totalWeight = cargas
-    .filter((carga) => carga.status !== rejectedAtIntakeStatus)
+    .filter((carga) => carga.status !== rejectedAtIntakeStatus && !carga.pesoSuspeito)
     .reduce((total, carga) => total + carga.peso, 0);
+  const suspiciousWeightCount = cargas.filter((carga) => carga.pesoSuspeito).length;
   const pendingLoads = cargas.filter(
     (carga) => carga.status !== "Vendida" && carga.status !== rejectedAtIntakeStatus,
   ).length;
@@ -327,6 +329,17 @@ export default function CargasPage() {
             </div>
           </article>
         </section>
+        {suspiciousWeightCount > 0 && (
+          <aside role="status" className="mt-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+            <p className="font-semibold">
+              {suspiciousWeightCount} {suspiciousWeightCount === 1 ? "pesagem precisa" : "pesagens precisam"} de conferência.
+            </p>
+            <p className="mt-1">
+              Os pesos suspeitos, como 2,5 kg, estão sinalizados e não entram no total de peso recebido nem no cálculo do rateio.
+              O rateio considera a produção registrada por cooperado.
+            </p>
+          </aside>
+        )}
 
         <section className="mt-6 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-200 px-4 py-4 sm:px-5">
@@ -366,7 +379,14 @@ export default function CargasPage() {
                       <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-600">{formatDate(carga.data)}</td>
                       <td className="px-4 py-3 text-sm font-medium text-slate-800">{carga.gerador}</td>
                       <td className="px-4 py-3 text-sm text-slate-700">{carga.material}</td>
-                      <td className="whitespace-nowrap px-4 py-3 text-right text-sm tabular-nums text-slate-700">{formatNumber(carga.peso)} kg</td>
+                      <td className="px-4 py-3 text-right text-sm tabular-nums text-slate-700">
+                        <span className="whitespace-nowrap">{formatNumber(carga.peso)} kg</span>
+                        {carga.pesoSuspeito && (
+                          <span className="mt-1 block whitespace-nowrap text-xs font-semibold text-amber-800" title="Pesagem fora do intervalo esperado; o peso não é considerado no rateio">
+                            ⚠ Conferir pesagem
+                          </span>
+                        )}
+                      </td>
                       <td className="whitespace-nowrap px-4 py-3 text-right text-sm tabular-nums text-slate-700">{formatNumber(carga.rejeito)}%</td>
                       <td className="px-4 py-3">
                         <span className="inline-flex rounded-full bg-[#e8efe3] px-2.5 py-1 text-xs font-medium text-[#42603c]">{carga.status}</span>
@@ -504,7 +524,7 @@ export default function CargasPage() {
               {weightNeedsConfirmation && (
                 <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
                   <p>
-                    O peso informado está fora do intervalo de 1 kg a 10.000 kg.
+                    O peso informado está fora do intervalo de 10 kg a 10.000 kg.
                     Confira a unidade e o valor antes de confirmar.
                   </p>
                   <label className="mt-2 flex items-start gap-2 font-medium">

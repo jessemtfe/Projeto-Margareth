@@ -1,7 +1,20 @@
-export const MIN_EXPECTED_CARGA_WEIGHT_KG = 1;
+export const MIN_EXPECTED_CARGA_WEIGHT_KG = 10;
 export const MAX_EXPECTED_CARGA_WEIGHT_KG = 10_000;
 export const REJECTION_ALERT_THRESHOLD_PERCENT = 25;
 export const REJECTION_ALERT_CONSECUTIVE_LOADS = 3;
+
+export type RejectionPercentageRecord = {
+  gerador: string;
+  geradorId: number | null;
+  rejeito: number | string | { toString(): string };
+};
+
+export type RejectionPercentageSummary = {
+  generatorId: number | null;
+  gerador: string;
+  cargas: number;
+  rejeitoMedio: number;
+};
 
 export type CargaRuleRecord = {
   id: number;
@@ -22,6 +35,39 @@ export function isWeightOutsideExpectedRange(weightKg: number) {
     weightKg < MIN_EXPECTED_CARGA_WEIGHT_KG ||
     weightKg > MAX_EXPECTED_CARGA_WEIGHT_KG
   );
+}
+
+export function isCargaWeightSuspect(weightKg: number, storedAsSuspect: boolean) {
+  return storedAsSuspect || isWeightOutsideExpectedRange(weightKg);
+}
+
+export function summarizeRejectionPercentages(
+  cargas: RejectionPercentageRecord[],
+): RejectionPercentageSummary[] {
+  const groupedCargas = new Map<string, RejectionPercentageSummary>();
+
+  for (const carga of cargas) {
+    const key =
+      carga.geradorId === null
+        ? `legacy:${carga.gerador.trim().toLocaleLowerCase("pt-BR")}`
+        : `generator:${carga.geradorId}`;
+    const summary = groupedCargas.get(key) ?? {
+      generatorId: carga.geradorId,
+      gerador: carga.gerador,
+      cargas: 0,
+      rejeitoMedio: 0,
+    };
+    summary.cargas += 1;
+    summary.rejeitoMedio += Number(carga.rejeito.toString());
+    groupedCargas.set(key, summary);
+  }
+
+  return Array.from(groupedCargas.values())
+    .map((summary) => ({
+      ...summary,
+      rejeitoMedio: summary.rejeitoMedio / summary.cargas,
+    }))
+    .sort((a, b) => a.gerador.localeCompare(b.gerador, "pt-BR"));
 }
 
 export function getRejectionAlerts(cargas: CargaRuleRecord[]): RejectionAlert[] {

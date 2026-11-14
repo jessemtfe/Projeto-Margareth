@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { getRejectionAlerts } from "../lib/carga-rules.ts";
+import {
+  getRejectionAlerts,
+  isCargaWeightSuspect,
+  isWeightOutsideExpectedRange,
+  summarizeRejectionPercentages,
+} from "../lib/carga-rules.ts";
 import {
   cargaStatuses,
   nextCargaStatus,
@@ -56,6 +61,25 @@ test("legacy loads are grouped by normalized generator name", () => {
   ]);
   assert.equal(alerts.length, 1);
   assert.equal(alerts[0].generatorId, null);
+});
+
+test("flags a likely kilogram-versus-tonne weighing error for confirmation", () => {
+  assert.equal(isWeightOutsideExpectedRange(2.5), true);
+  assert.equal(isWeightOutsideExpectedRange(10), false);
+  assert.equal(isWeightOutsideExpectedRange(2_500), false);
+  assert.equal(isCargaWeightSuspect(2.5, false), true);
+  assert.equal(isCargaWeightSuspect(2_500, true), true);
+});
+
+test("summarizes monthly rejection percentages per generator", () => {
+  assert.deepEqual(summarizeRejectionPercentages([
+    { geradorId: 10, gerador: "Gerador A", rejeito: 20 },
+    { geradorId: 10, gerador: "Gerador A", rejeito: "30.00" },
+    { geradorId: 11, gerador: "Gerador B", rejeito: 15 },
+  ]), [
+    { generatorId: 10, gerador: "Gerador A", cargas: 2, rejeitoMedio: 25 },
+    { generatorId: 11, gerador: "Gerador B", cargas: 1, rejeitoMedio: 15 },
+  ]);
 });
 
 test("charge progression permits only the next step and has no step after sold", () => {

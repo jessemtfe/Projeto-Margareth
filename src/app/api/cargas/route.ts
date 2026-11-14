@@ -6,7 +6,10 @@ import {
   isInitialCargaStatus,
   nextCargaStatus,
 } from "../../../../lib/carga-status";
-import { isWeightOutsideExpectedRange } from "../../../../lib/carga-rules";
+import {
+  isCargaWeightSuspect,
+  isWeightOutsideExpectedRange,
+} from "../../../../lib/carga-rules";
 import { saoPauloCompetence } from "../../../../lib/turno-rules";
 import prisma from "../../../../lib/prisma";
 
@@ -45,14 +48,15 @@ function formatCarga(carga: {
   status: string;
   data: string;
 }) {
+  const peso = Number(carga.peso.toString());
   return {
     id: carga.idCarga,
     geradorId: carga.geradorId,
     gerador: carga.gerador,
     material: carga.material,
-    peso: Number(carga.peso.toString()),
+    peso,
     rejeito: Number(carga.rejeito.toString()),
-    pesoSuspeito: carga.pesoSuspeito,
+    pesoSuspeito: isCargaWeightSuspect(peso, carga.pesoSuspeito),
     status: carga.status,
     data: carga.data,
   };
@@ -120,7 +124,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error:
-          "Confira a pesagem: o valor informado está fora do intervalo esperado de 1 kg a 10.000 kg.",
+          "Confira a pesagem: o valor informado está fora do intervalo esperado de 10 kg a 10.000 kg.",
         requiresWeightConfirmation: true,
       },
       { status: 409 },
