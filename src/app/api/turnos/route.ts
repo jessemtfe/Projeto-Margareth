@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser, hasProfile, readJsonObject } from "../../../../lib/auth";
 import {
   completedShiftHours,
+  effectiveTurnoTipoDia,
   isValidClockTime,
   isValidDateOnly,
   isTurnoTipoDia,
@@ -25,6 +26,7 @@ function serialize(turno: {
   return {
     ...turno,
     cooperadoNome: turno.cooperado?.nome,
+    tipoDia: effectiveTurnoTipoDia(turno.tipoDia, saoPauloDate(turno.inicio)),
     inicio: turno.inicio.toISOString(),
     saida: turno.saida?.toISOString() ?? null,
     horasTrabalhadas: completedShiftHours(turno.inicio, turno.saida),

@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   calculatePonderedHours,
   completedShiftHours,
+  effectiveTurnoTipoDia,
   isValidClockTime,
   isValidDateOnly,
   participatesInProduction,
@@ -40,6 +41,13 @@ test("rejects an exit time before or equal to entry", () => {
 test("identifies Sunday using the shift date", () => {
   assert.equal(weekdayForDate("2026-10-25"), 0);
   assert.equal(weekdayForDate("2026-10-26"), 1);
+});
+
+test("treats previously recorded Sunday shifts as Sunday based on their date", () => {
+  assert.equal(effectiveTurnoTipoDia("NORMAL", "2026-11-15"), "DOMINGO");
+  assert.equal(effectiveTurnoTipoDia("FERIADO", "2026-11-15"), "DOMINGO");
+  assert.equal(effectiveTurnoTipoDia("NORMAL", "2026-11-16"), "NORMAL");
+  assert.equal(effectiveTurnoTipoDia("FERIADO", "2026-11-16"), "FERIADO");
 });
 
 test("uses the São Paulo month boundary for current competence", () => {

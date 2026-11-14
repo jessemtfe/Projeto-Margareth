@@ -72,3 +72,7 @@ export function isTurnoTipoDia(value: unknown): value is TurnoTipoDia {
 export function isSundayDate(value: string) {
   return isValidDateOnly(value) && weekdayForDate(value) === 0;
 }
+
+export function effectiveTurnoTipoDia(tipoDia: string, date: string) {
+  return isSundayDate(date) ? "DOMINGO" : tipoDia;
+}

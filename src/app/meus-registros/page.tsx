@@ -107,7 +107,12 @@ function isSunday(date: string) {
   return Boolean(date) && new Date(`${date}T12:00:00.000Z`).getUTCDay() === 0;
 }
 
-function dayTypeLabel(tipoDia: Turno["tipoDia"]) {
+function effectiveTurnoTipoDia(turno: Turno) {
+  return isSunday(dateInSaoPaulo(turno.inicio)) ? "DOMINGO" : turno.tipoDia;
+}
+
+function dayTypeLabel(turno: Turno) {
+  const tipoDia = effectiveTurnoTipoDia(turno);
   return tipoDia === "DOMINGO" ? "Domingo (horas em dobro)" : tipoDia === "FERIADO" ? "Feriado (horas em dobro)" : "Normal";
 }
 
@@ -320,8 +325,9 @@ export default function MeusRegistrosPage() {
         return totals;
       }
       const actual = turno.horasTrabalhadas;
+      const tipoDia = effectiveTurnoTipoDia(turno);
       const weighted =
-        turno.tipoDia === "DOMINGO" || turno.tipoDia === "FERIADO" ? actual * 2 : actual;
+        tipoDia === "DOMINGO" || tipoDia === "FERIADO" ? actual * 2 : actual;
       return {
         actual: totals.actual + actual,
         weighted: totals.weighted + weighted,
@@ -577,10 +583,10 @@ export default function MeusRegistrosPage() {
                               </div>
                               <span className="text-slate-500">
                                 {turno.status === "ABERTO"
-                                  ? `Em andamento · ${dayTypeLabel(turno.tipoDia)}`
+                                  ? `Em andamento · ${dayTypeLabel(turno)}`
                                   : turno.saida
-                                    ? `${turno.horasTrabalhadas?.toFixed(2) ?? "0.00"} h · ${dayTypeLabel(turno.tipoDia)}`
-                                    : `Fechado sem horário de saída · ${dayTypeLabel(turno.tipoDia)}`}
+                                    ? `${turno.horasTrabalhadas?.toFixed(2) ?? "0.00"} h · ${dayTypeLabel(turno)}`
+                                    : `Fechado sem horário de saída · ${dayTypeLabel(turno)}`}
                               </span>
                             </div>
                           ))}
@@ -612,10 +618,10 @@ export default function MeusRegistrosPage() {
                         }
                       >
                         {turno.status === "ABERTO"
-                          ? `Em andamento · ${dayTypeLabel(turno.tipoDia)}`
+                          ? `Em andamento · ${dayTypeLabel(turno)}`
                           : turno.saida
-                            ? `${turno.horasTrabalhadas?.toFixed(2) ?? "0.00"} h · ${dayTypeLabel(turno.tipoDia)}`
-                            : `Fechado sem horário de saída · ${dayTypeLabel(turno.tipoDia)}`}
+                            ? `${turno.horasTrabalhadas?.toFixed(2) ?? "0.00"} h · ${dayTypeLabel(turno)}`
+                            : `Fechado sem horário de saída · ${dayTypeLabel(turno)}`}
                       </span>
                     </div>
                   ))}
