@@ -74,7 +74,7 @@ export async function GET() {
     include: {
       cargas: {
         select: { idCarga: true, gerador: true, geradorId: true, rejeito: true, status: true, data: true },
-        orderBy: { idCarga: "desc" },
+        orderBy: [{ data: "desc" }, { idCarga: "desc" }],
       },
     },
   });

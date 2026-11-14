@@ -10,7 +10,6 @@ import {
   isCargaWeightSuspect,
   isWeightOutsideExpectedRange,
 } from "../../../../lib/carga-rules";
-import { saoPauloCompetence } from "../../../../lib/turno-rules";
 import prisma from "../../../../lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -72,7 +71,7 @@ export async function GET() {
   }
 
   const cargas = await prisma.tabelaCargas.findMany({
-    orderBy: { idCarga: "desc" },
+    orderBy: [{ data: "desc" }, { idCarga: "desc" }],
   });
 
   return NextResponse.json(cargas.map(formatCarga));
@@ -137,7 +136,7 @@ export async function POST(request: Request) {
       select: { gerador: true },
     }),
     prisma.tabelaPrecos.findFirst({
-      where: { material, status: "Ativo", mes: saoPauloCompetence() },
+      where: { material, status: "Ativo", mes: data.slice(0, 7) },
       select: { idPreco: true },
     }),
   ]);
@@ -148,7 +147,7 @@ export async function POST(request: Request) {
 
   if (!precoAtivo) {
     return NextResponse.json(
-      { error: "Selecione um material com preço ativo na competência atual." },
+      { error: "Selecione um material com preço ativo na competência da carga." },
       { status: 400 },
     );
   }
@@ -169,7 +168,7 @@ export async function POST(request: Request) {
   if (geradorId) {
     const recentes = await prisma.tabelaCargas.findMany({
       where: { geradorId },
-      orderBy: { idCarga: "desc" },
+      orderBy: [{ data: "desc" }, { idCarga: "desc" }],
       take: 3,
       select: { idCarga: true, rejeito: true },
     });
