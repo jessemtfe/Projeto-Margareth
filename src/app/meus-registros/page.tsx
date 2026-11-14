@@ -365,6 +365,46 @@ export default function MeusRegistrosPage() {
 
         {error && <p role="alert" className="mb-6 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p>}
 
+        {(profile === "PRESIDENTE" || profile === "BALANCEIRO") && (
+          <section
+            aria-label="Filtros de consulta de registros"
+            className="mb-6 rounded-2xl border border-[#cbd8c4] bg-white p-5 shadow-sm"
+          >
+            <h2 className="text-base font-bold text-slate-900">Consultar horas e produção</h2>
+            <div className="mt-3 grid gap-4 sm:grid-cols-2">
+              <label className="text-sm font-medium text-slate-700">
+                Competência
+                <input
+                  type="month"
+                  value={recordsMonth}
+                  onChange={(event) => setRecordsMonth(event.target.value)}
+                  className="mt-1 min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm"
+                />
+              </label>
+              <label className="text-sm font-medium text-slate-700">
+                Cooperado
+                <select
+                  value={recordsCooperadoId}
+                  onChange={(event) => setRecordsCooperadoId(event.target.value)}
+                  className="mt-1 min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm"
+                >
+                  <option value="">Todos os cooperados</option>
+                  {cooperados.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.nome}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <p aria-live="polite" className="mt-3 text-sm text-slate-600">
+              Exibindo {recordsCooperadoId
+                ? cooperados.find((item) => String(item.id) === recordsCooperadoId)?.nome ?? "cooperado selecionado"
+                : "todos os cooperados"} · {formatMonth(recordsMonth)}
+            </p>
+          </section>
+        )}
+
         <section className="grid gap-4 md:grid-cols-3">
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <Clock3 className="h-5 w-5 text-sky-700" />
@@ -396,38 +436,6 @@ export default function MeusRegistrosPage() {
             </div>
           )}
         </section>
-
-        {(profile === "PRESIDENTE" || profile === "BALANCEIRO") && (
-          <section
-            aria-label="Filtros de registros"
-            className="mt-6 grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:grid-cols-2"
-          >
-            <label className="text-sm font-medium text-slate-700">
-              Competência da consulta
-              <input
-                type="month"
-                value={recordsMonth}
-                onChange={(event) => setRecordsMonth(event.target.value)}
-                className="mt-1 min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm"
-              />
-            </label>
-            <label className="text-sm font-medium text-slate-700">
-              Cooperado para consulta
-              <select
-                value={recordsCooperadoId}
-                onChange={(event) => setRecordsCooperadoId(event.target.value)}
-                className="mt-1 min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm"
-              >
-                <option value="">Todos os cooperados</option>
-                {cooperados.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.nome}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </section>
-        )}
 
         <section className="mt-6 grid gap-6 lg:grid-cols-2">
           <div id="turnos" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
