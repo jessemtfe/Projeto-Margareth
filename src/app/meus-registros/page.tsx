@@ -37,6 +37,7 @@ type CooperadoOption = { id: number; nome: string };
 type Memoria = {
   id: number;
   periodo: { competencia: string; status: string };
+  nomeCooperado: string;
   horasReais: number;
   horas: number;
   kgTriados: number;
@@ -786,10 +787,11 @@ export default function MeusRegistrosPage() {
           </div>
           <div className="mt-5 overflow-x-auto">
             <table className="min-w-full text-left text-sm">
-              <thead><tr className="border-b text-xs uppercase tracking-wider text-slate-500"><th className="px-3 py-3">Competência</th><th className="px-3 py-3">Horas reais / rateadas</th><th className="px-3 py-3">Produção</th><th className="px-3 py-3">Parcela horas</th><th className="px-3 py-3">Parcela produção</th><th className="px-3 py-3">Bônus</th><th className="px-3 py-3">Total</th></tr></thead>
+              <thead><tr className="border-b text-xs uppercase tracking-wider text-slate-500"><th className="px-3 py-3">Cooperado</th><th className="px-3 py-3">Competência</th><th className="px-3 py-3">Horas reais / rateadas</th><th className="px-3 py-3">Produção</th><th className="px-3 py-3">Parcela horas</th><th className="px-3 py-3">Parcela produção</th><th className="px-3 py-3">Bônus</th><th className="px-3 py-3">Total</th></tr></thead>
               <tbody>
                 {memorias.map((item) => (
                   <tr key={item.id} className="border-b last:border-0">
+                    <td className="px-3 py-3 font-medium text-slate-800">{item.nomeCooperado}</td>
                     <td className="px-3 py-3">{item.periodo.competencia}</td>
                     <td className="px-3 py-3">{item.horasReais.toFixed(2)} h / {item.horas.toFixed(2)} h</td>
                     <td className="px-3 py-3">
@@ -806,7 +808,7 @@ export default function MeusRegistrosPage() {
                     <td className="px-3 py-3 font-semibold">{formatMoney(item.valorTotal)}</td>
                   </tr>
                 ))}
-                {!loading && memorias.length === 0 && <tr><td colSpan={7} className="px-3 py-6 text-center text-slate-500">Ainda não há memória de cálculo fechada.</td></tr>}
+                {!loading && memorias.length === 0 && <tr><td colSpan={8} className="px-3 py-6 text-center text-slate-500">Ainda não há memória de cálculo fechada.</td></tr>}
               </tbody>
             </table>
           </div>
