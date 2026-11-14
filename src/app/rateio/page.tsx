@@ -8,6 +8,8 @@ type RateioLine = {
   nomeCooperado: string;
   horasReais: number;
   horasPonderadas: number;
+  horasDobras: number;
+  impactoDobraHoras: number;
   kgTriados: number;
   valorProduzido: number;
   valorHoras: number;
@@ -19,6 +21,8 @@ type RateioLine = {
     regra: string;
     participaProducao: boolean;
     bonusElegivel: boolean;
+    horasDobras: number;
+    impactoDobraHoras: number;
     materiais: Array<{ material: string; kg: number; precoPorKg: number; valorProduzido: number }>;
   };
 };
@@ -52,6 +56,12 @@ function currentCompetence() {
 
 function money(value: number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
+}
+
+function signedMoney(value: number) {
+  if (value > 0) return `+${money(value)}`;
+  if (value < 0) return `−${money(Math.abs(value))}`;
+  return money(0);
 }
 
 export default function RateioPage() {
@@ -153,7 +163,7 @@ export default function RateioPage() {
                 ["Fundo avaliado", preview.valorDisponivel],
                 ["Parcela de horas (50%)", preview.parcelaHorasDisponivel],
                 ["Parcela de produção (50%)", preview.parcelaProducaoDisponivel],
-                ["Bônus adicional", preview.bonusTotal],
+                ["Bônus de produção (>180 h)", preview.bonusTotal],
                 ["Total a receber", preview.totalRateado],
               ].map(([label, amount]) => (
                 <article key={label} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -170,6 +180,9 @@ export default function RateioPage() {
                 {formattedCloseDate && <p className="mt-1 text-xs text-slate-500">Fechado em {formattedCloseDate}</p>}
               </article>
             </section>
+            <p className="mt-3 text-sm text-slate-600">
+              Domingo e feriado dobram as horas na parcela de horas. “Impacto da dobra” compara o valor rateado com o valor hipotético sem essa dobra; bônus de produção é uma regra separada de 10% para quem supera 180 horas reais.
+            </p>
 
             {preview.issues.length > 0 && (
               <section className="mt-6 rounded-2xl border border-amber-300 bg-amber-50 p-5">
@@ -215,7 +228,8 @@ export default function RateioPage() {
                   <thead className="border-b text-slate-500">
                     <tr>
                       <th className="py-2 pr-3">Cooperado</th><th className="py-2 pr-3">Horas reais</th>
-                      <th className="py-2 pr-3">Horas ponderadas</th><th className="py-2 pr-3">Produção</th>
+                      <th className="py-2 pr-3">Horas ponderadas</th><th className="py-2 pr-3">Horas dobradas</th>
+                      <th className="py-2 pr-3">Impacto da dobra</th><th className="py-2 pr-3">Produção</th>
                       <th className="py-2 pr-3">Valor produzido</th><th className="py-2 pr-3">Parcela horas</th>
                       <th className="py-2 pr-3">Parcela produção</th><th className="py-2 pr-3">Bônus</th>
                       <th className="py-2">Total</th>
@@ -235,6 +249,10 @@ export default function RateioPage() {
                         </td>
                         <td className="py-3 pr-3">{line.horasReais.toFixed(2)} h</td>
                         <td className="py-3 pr-3">{line.horasPonderadas.toFixed(2)} h</td>
+                        <td className="py-3 pr-3">{line.horasDobras.toFixed(2)} h</td>
+                        <td className={`py-3 pr-3 font-medium ${line.impactoDobraHoras > 0 ? "text-emerald-700" : line.impactoDobraHoras < 0 ? "text-rose-700" : "text-slate-600"}`}>
+                          {signedMoney(line.impactoDobraHoras)}
+                        </td>
                         <td className="py-3 pr-3">{line.kgTriados.toFixed(2)} kg</td>
                         <td className="py-3 pr-3">{money(line.valorProduzido)}</td>
                         <td className="py-3 pr-3">{money(line.valorHoras)}</td>
@@ -243,7 +261,7 @@ export default function RateioPage() {
                         <td className="py-3 font-bold">{money(line.valorTotal)}</td>
                       </tr>
                     ))}
-                    {preview.linhas.length === 0 && <tr><td className="py-4 text-slate-500" colSpan={9}>Nenhum cooperado cadastrado.</td></tr>}
+                    {preview.linhas.length === 0 && <tr><td className="py-4 text-slate-500" colSpan={11}>Nenhum cooperado cadastrado.</td></tr>}
                   </tbody>
                 </table>
               </div>

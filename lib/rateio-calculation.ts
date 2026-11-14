@@ -54,6 +54,8 @@ export type RateioLine = {
   nomeCooperado: string;
   horasReais: number;
   horasPonderadas: number;
+  horasDobras: number;
+  impactoDobraHoras: number;
   kgTriados: number;
   valorProduzido: number;
   valorHoras: number;
@@ -65,6 +67,8 @@ export type RateioLine = {
     regra: string;
     participaProducao: boolean;
     bonusElegivel: boolean;
+    horasDobras: number;
+    impactoDobraHoras: number;
     materiais: Array<{ material: string; kg: number; precoPorKg: number; valorProduzido: number }>;
   };
 };
@@ -213,6 +217,7 @@ export function calculateRateio(
 
   const hoursActual = new Map<number, number>();
   const hoursWeighted = new Map<number, number>();
+  const hoursDoubleWeighted = new Map<number, number>();
   for (const shift of validShifts) {
     const actual = roundedHours(shift.inicio, shift.saida!);
     const isSunday = weekdayForDate(saoPauloDate(shift.inicio)) === 0;
@@ -226,11 +231,18 @@ export function calculateRateio(
       shift.cooperadoId,
       (hoursWeighted.get(shift.cooperadoId) ?? 0) + calculatePonderedHours(actual, dayType, isSunday),
     );
+    if (isSunday || dayType === "DOMINGO" || dayType === "FERIADO") {
+      hoursDoubleWeighted.set(
+        shift.cooperadoId,
+        (hoursDoubleWeighted.get(shift.cooperadoId) ?? 0) + actual,
+      );
+    }
   }
 
   const linesBase = cooperados.map((cooperado) => {
     const actual = money(hoursActual.get(cooperado.id) ?? 0);
     const weighted = money(hoursWeighted.get(cooperado.id) ?? 0);
+    const doubledHours = money(hoursDoubleWeighted.get(cooperado.id) ?? 0);
     const eligible = participatesInProduction(actual);
     const producedValue = money(pricedProduction.get(cooperado.id) ?? 0);
     const details = Array.from(materialDetails.get(cooperado.id)?.values() ?? []);
@@ -239,6 +251,7 @@ export function calculateRateio(
       nomeCooperado: cooperado.nome,
       horasReais: actual,
       horasPonderadas: weighted,
+      horasDobras: doubledHours,
       kgTriados: money(kgByCooperado.get(cooperado.id) ?? 0),
       valorProduzido: producedValue,
       participates: eligible,
@@ -278,6 +291,10 @@ export function calculateRateio(
     hoursPoolCents,
     linesBase.map((line) => ({ id: line.cooperadoId, weight: line.horasPonderadas })),
   );
+  const hoursWithoutDoublingAllocation = allocateCents(
+    hoursPoolCents,
+    linesBase.map((line) => ({ id: line.cooperadoId, weight: line.horasReais })),
+  );
   const productionAllocation = allocateCents(
     productionPoolCents,
     linesBase
@@ -287,6 +304,10 @@ export function calculateRateio(
 
   const linhas: RateioLine[] = linesBase.map((line) => {
     const valorHoras = (hoursAllocation.get(line.cooperadoId) ?? 0) / 100;
+    const impactoDobraHoras =
+      ((hoursAllocation.get(line.cooperadoId) ?? 0) -
+        (hoursWithoutDoublingAllocation.get(line.cooperadoId) ?? 0)) /
+      100;
     const valorProducao = (productionAllocation.get(line.cooperadoId) ?? 0) / 100;
     const bonus = line.bonusElegivel ? money(valorProducao * 0.1) : 0;
     const valorTotal = money(valorHoras + valorProducao + bonus);
@@ -295,6 +316,8 @@ export function calculateRateio(
       nomeCooperado: line.nomeCooperado,
       horasReais: line.horasReais,
       horasPonderadas: line.horasPonderadas,
+      horasDobras: line.horasDobras,
+      impactoDobraHoras,
       kgTriados: line.kgTriados,
       valorProduzido: line.valorProduzido,
       valorHoras,
@@ -306,6 +329,8 @@ export function calculateRateio(
         regra: "Fundo mensal pela produção avaliada aos preços ativos do mês; 50% horas e 50% produção. Domingo/feriado dobra apenas horas de rateio. Bônus de 10% da parcela individual de produção para mais de 180 horas reais, adicional ao fundo.",
         participaProducao: line.participates,
         bonusElegivel: line.bonusElegivel,
+        horasDobras: line.horasDobras,
+        impactoDobraHoras,
         materiais: line.materials,
       },
     };

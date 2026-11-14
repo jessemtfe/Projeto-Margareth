@@ -35,6 +35,8 @@ export async function GET(request: Request) {
         horasReais?: number;
         participaProducao?: boolean;
         valorProduzido?: number;
+        horasDobras?: number;
+        impactoDobraHoras?: number;
         materiais?: Array<{ material: string; kg: number; precoPorKg: number; valorProduzido: number }>;
       } | null;
       return {
@@ -42,6 +44,8 @@ export async function GET(request: Request) {
         nomeCooperado: item.nomeCooperado || item.cooperado.nome,
         horasReais: Number(item.horasReais) || Number(details?.horasReais ?? 0),
         horasPonderadas: Number(item.horas),
+        horasDobras: details?.horasDobras ?? 0,
+        impactoDobraHoras: details?.impactoDobraHoras ?? 0,
         kgTriados: Number(item.kgTriados),
         valorProduzido: Number(details?.valorProduzido ?? 0),
         valorHoras: Number(item.valorHoras),
@@ -53,6 +57,8 @@ export async function GET(request: Request) {
           regra: "Valores registrados e preservados no fechamento mensal.",
           participaProducao: details?.participaProducao ?? false,
           bonusElegivel: Number(item.bonus) > 0,
+          horasDobras: details?.horasDobras ?? 0,
+          impactoDobraHoras: details?.impactoDobraHoras ?? 0,
           materiais: details?.materiais ?? [],
         },
       };
