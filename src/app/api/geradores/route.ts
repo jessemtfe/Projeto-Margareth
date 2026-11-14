@@ -24,14 +24,17 @@ type GeradorRecord = {
 
 function formatGerador(item: GeradorRecord) {
   const historico = (item.cargas ?? [])
-    .sort((a, b) => b.idCarga - a.idCarga)
     .map((carga) => ({
       id: carga.idCarga,
       rejeito: Number(String(carga.rejeito)),
       status: carga.status,
       data: carga.data,
-    }));
+    }))
+    .sort((a, b) => b.data.localeCompare(a.data) || b.id - a.id);
   const ultimas = historico.slice(0, 3);
+  const ultimaColeta = historico.find((carga) =>
+    /^\d{4}-\d{2}-\d{2}$/.test(carga.data),
+  )?.data;
   const alertaAtual =
     ultimas.length === 3 &&
     ultimas.every((carga) => carga.rejeito > 25);
@@ -42,7 +45,11 @@ function formatGerador(item: GeradorRecord) {
     tipo: item.tipo,
     rejeito: null,
     status: alertaAtual ? "Alertado" : "Normal",
-    ultimaColeta: item.ultimaColeta ? new Date(item.ultimaColeta).toISOString() : new Date().toISOString(),
+    ultimaColeta: ultimaColeta
+      ? new Date(`${ultimaColeta}T12:00:00-03:00`).toISOString()
+      : item.ultimaColeta
+        ? new Date(item.ultimaColeta).toISOString()
+        : new Date().toISOString(),
     resumo: {
       totalCargas: historico.length,
       ultimaRejeito: historico[0]?.rejeito ?? null,

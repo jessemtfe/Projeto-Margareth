@@ -33,6 +33,15 @@ function formatCollectionDate(value: number | string) {
   });
 }
 
+function formatLoadDate(value: string) {
+  const date = new Date(`${value}T00:00:00.000Z`);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeZone: "UTC",
+  }).format(date);
+}
+
 export default function GeradoresPage() {
   const [geradores, setGeradores] = useState<Gerador[]>([]);
   const [termoBusca, setTermoBusca] = useState("");
@@ -234,7 +243,7 @@ export default function GeradoresPage() {
                             <div className="mt-2 space-y-1 border-t border-slate-100 pt-2 text-xs">
                               {gerador.resumo.historico.map((carga) => (
                                 <p key={carga.id} className="flex justify-between gap-3">
-                                  <span>Carga #{carga.id}</span>
+                                  <span>Carga #{carga.id} · {formatLoadDate(carga.data)}</span>
                                   <span className={carga.rejeito > 25 ? "font-semibold text-amber-700" : "text-slate-500"}>
                                     {carga.rejeito.toFixed(2)}%
                                   </span>
